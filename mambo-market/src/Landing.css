@@ -1,0 +1,11 @@
+main {
+  padding: 2rem 1rem;
+}
+
+.footer {
+  background-color: #222;
+  color: white;
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-top: 3rem;
+}

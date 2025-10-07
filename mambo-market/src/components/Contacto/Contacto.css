@@ -1,0 +1,22 @@
+.contacto {
+  background-color: #ffffff;
+  padding: 60px 20px;
+  color: #222;
+  text-align: center;
+}
+
+.contacto h2 {
+  font-size: 32px;
+  margin-bottom: 20px;
+  color: #000;
+}
+
+.contacto p {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+.contacto a {
+  color: #000;
+  text-decoration: underline;
+}
