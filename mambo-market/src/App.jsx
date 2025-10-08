@@ -279,7 +279,7 @@ ${formData.mensaje}
       <section id="metodologia" className="section">
         <div className="container">
           <h2 className="fade-in">Nuestra Metodología</h2>
-          <p className="section-intro fade-in">
+        <p className="section-intro fade-in">
             Metodologías propias y técnicas internacionales para resultados excepcionales
           </p>
 
@@ -675,10 +675,23 @@ ${formData.mensaje}
             </div>
           </div>
 
+          {/* ==== SOLO CAMBIADO ESTO ==== */}
           <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} Mambo Market. • Pagina hecha por Santiago Gil Mina.</p>
-            <p>Investigación de Mercados • Coaching Empresarial • Consultoría Estratégica</p>
+            <span>© {new Date().getFullYear()} Mambo Market. Todos los derechos reservados.</span>
+            <span className="footer-sep" aria-hidden="true">•</span>
+            <small className="footer-credit">
+              Sitio creado por{" "}
+              <a
+                href="https://github.com/Santygm04"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Autor del sitio"
+              >
+                Santiago Gil Mina
+              </a>
+            </small>
           </div>
+          {/* ============================ */}
         </div>
       </footer>
     </div>
