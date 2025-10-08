@@ -676,7 +676,7 @@ ${formData.mensaje}
           </div>
 
           <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} Mambo Market. Todos los derechos reservados.</p>
+            <p>&copy; {new Date().getFullYear()} Mambo Market. • Pagina hecha por Santiago Gil Mina.</p>
             <p>Investigación de Mercados • Coaching Empresarial • Consultoría Estratégica</p>
           </div>
         </div>
