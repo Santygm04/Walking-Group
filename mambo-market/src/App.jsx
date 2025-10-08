@@ -678,6 +678,7 @@ ${formData.mensaje}
           {/* ==== SOLO CAMBIADO ESTO ==== */}
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} Mambo Market. Todos los derechos reservados.</span>
+            <p>Investigación de Mercados • Coaching Empresarial • Consultoría Estratégica</p>
             <span className="footer-sep" aria-hidden="true">•</span>
             <small className="footer-credit">
               Sitio creado por{" "}
