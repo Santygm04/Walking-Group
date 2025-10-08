@@ -17,7 +17,7 @@ const Landing = () => {
       </main>
 
       <footer className="footer">
-        <p>&copy; {new Date().getFullYear()} Mambo Market — Todos los derechos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} Mambo Market — Pagina hecha por Santiago Gil Mina.</p>
       </footer>
     </div>
   );
