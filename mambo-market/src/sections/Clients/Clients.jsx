@@ -62,6 +62,16 @@ export default function Clients() {
           </div>
 
           <div className="coverage__body">
+            <div className="coverage__route" aria-hidden="true">
+              {OFFICES.map((office) => (
+                <div className="coverage__route-stop" key={office.id}>
+                  <span className="coverage__route-dot" />
+                  <strong>{office.shortCity}</strong>
+                  <small>{office.id.toUpperCase()}</small>
+                </div>
+              ))}
+            </div>
+
             <div className="coverage__map" role="img" aria-label="Mapa de cobertura con oficinas en Tucumán, España y Emiratos Árabes Unidos">
               <svg viewBox="0 0 600 300" fill="none" aria-hidden="true">
                 <defs>
