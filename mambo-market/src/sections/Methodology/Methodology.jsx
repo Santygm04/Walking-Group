@@ -9,36 +9,43 @@ export default function Methodology() {
   const [openIndex, setOpenIndex] = useState(0)
 
   return (
-    <section id="metodologia" className="section section--dark methodology">
-      <div className="methodology__grid-bg" aria-hidden="true" />
-
+    <section id="metodologia" className="section methodology">
       <div className="container">
+        <div className="section-head">
+          <p className="section-label">03 — Metodología</p>
+          <h2 className="section-title" data-reveal>
+            Un método claro, de la pregunta a la <span className="accent">decisión.</span>
+          </h2>
+          <p className="section-aside" data-reveal style={{ "--reveal-delay": "100ms" }}>
+            Metodologías propias y técnicas internacionales para responder preguntas de negocio con evidencia.
+          </p>
+        </div>
+
         <div className="methodology__layout">
-          <div className="methodology__intro">
-            <p className="section-label">03 — Metodología</p>
-            <h2 className="section-title" data-reveal>
-              Método propio.
-              <br />
-              <span className="serif accent">Rigor internacional.</span>
-            </h2>
-            <p className="lead" data-reveal style={{ "--reveal-delay": "120ms" }}>
-              Metodologías propias y técnicas internacionales para responder preguntas de negocio con evidencia, no con
-              intuición.
-            </p>
+          <aside className="methodology__intro" data-reveal>
+            <div className="methodology__intro-card">
+              <span className="methodology__eyebrow">Nuestro proceso</span>
+              <h3>Rigor metodológico en cada etapa.</h3>
+              <p>
+                Combinamos herramientas cuantitativas, cualitativas y modelos propios para transformar información en
+                decisiones accionables.
+              </p>
 
-            <div className="methodology__phases" data-reveal style={{ "--reveal-delay": "200ms" }}>
-              {PHASES.map((phase, index) => (
-                <span key={phase}>
-                  <i>0{index + 1}</i>
-                  {phase}
-                </span>
-              ))}
-            </div>
+              <ol className="methodology__phases">
+                {PHASES.map((phase, index) => (
+                  <li key={phase}>
+                    <span>0{index + 1}</span>
+                    {phase}
+                  </li>
+                ))}
+              </ol>
 
-            <div className="methodology__mark" aria-hidden="true">
-              <Icon name="spark" size={130} strokeWidth={1} />
+              <a className="btn btn--accent" href="#contacto">
+                Hablemos de tu proyecto
+                <Icon name="arrow-up-right" size={16} />
+              </a>
             </div>
-          </div>
+          </aside>
 
           <div className="methodology__list">
             {METHODS.map((method, index) => {
@@ -49,7 +56,7 @@ export default function Methodology() {
                   className={`method ${isOpen ? "is-open" : ""}`}
                   key={method.title}
                   data-reveal
-                  style={{ "--reveal-delay": `${index * 80}ms` }}
+                  style={{ "--reveal-delay": `${index * 60}ms` }}
                 >
                   <h3>
                     <button
@@ -63,7 +70,7 @@ export default function Methodology() {
                       <span className="method__index">{method.index}</span>
                       <span className="method__title">{method.title}</span>
                       <span className="method__icon" aria-hidden="true">
-                        <Icon name={isOpen ? "minus" : "plus"} size={18} />
+                        <Icon name={isOpen ? "minus" : "plus"} size={17} />
                       </span>
                     </button>
                   </h3>

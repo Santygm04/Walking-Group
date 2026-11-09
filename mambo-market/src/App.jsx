@@ -2,7 +2,7 @@ import { useCallback, useState } from "react"
 import "./index.css"
 import SiteHeader from "./sections/SiteHeader/SiteHeader"
 import Hero from "./sections/Hero/Hero"
-import Ticker from "./sections/Ticker/Ticker"
+import TrustBar from "./sections/TrustBar/TrustBar"
 import About from "./sections/About/About"
 import Services from "./sections/Services/Services"
 import Methodology from "./sections/Methodology/Methodology"
@@ -37,7 +37,7 @@ export default function App() {
 
       <main id="contenido" tabIndex={-1}>
         <Hero reduced={reduced} />
-        <Ticker />
+        <TrustBar />
         <About reduced={reduced} />
         <Services onSelectService={handleSelectService} />
         <Methodology />

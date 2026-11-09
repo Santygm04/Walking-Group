@@ -22,20 +22,14 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="container">
         <div className="site-footer__cta" data-reveal>
-          <p className="section-label">Siguiente paso</p>
-          <div className="site-footer__cta-row">
-            <h2>
-              ¿Empezamos?
-              <br />
-              <span className="serif">Conversemos.</span>
-            </h2>
-            <a className="btn btn--light" href="#contacto" data-magnetic>
-              Ir al formulario
-              <span className="btn__icon">
-                <Icon name="arrow-up-right" size={18} />
-              </span>
-            </a>
+          <div>
+            <p className="site-footer__label">Siguiente paso</p>
+            <h2>¿Listo para decidir con datos?</h2>
           </div>
+          <a className="btn btn--accent" href="#contacto">
+            Agendar una consulta
+            <Icon name="arrow-up-right" size={17} />
+          </a>
         </div>
 
         <div className="site-footer__grid">
@@ -48,13 +42,13 @@ export default function SiteFooter() {
               </span>
               <span>
                 <strong>Mambo Market</strong>
-                <small>Research &amp; Coaching</small>
+                <small>Investigación &amp; estrategia</small>
               </span>
             </a>
             <p>Investigación de mercados, coaching empresarial y consultoría estratégica desde 2007.</p>
-            <a className="link-line" href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
+            <a className="link-arrow" href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">
               Instagram
-              <Icon name="arrow-up-right" size={13} />
+              <Icon name="arrow-up-right" size={14} />
             </a>
           </div>
 
@@ -93,10 +87,6 @@ export default function SiteFooter() {
             <p className="site-footer__person">Diego Gil — Director</p>
             <p className="site-footer__person">Sergio Ferrer — Europa</p>
           </div>
-        </div>
-
-        <div className="site-footer__wordmark" aria-hidden="true">
-          Mambo Market<span>®</span>
         </div>
 
         <div className="site-footer__bottom">

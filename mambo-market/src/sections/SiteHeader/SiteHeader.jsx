@@ -116,7 +116,7 @@ export default function SiteHeader() {
             </span>
             <span className="brand__type">
               <span className="brand__name">Mambo Market</span>
-              <span className="brand__sub">Research &amp; Coaching</span>
+              <span className="brand__sub">Investigación &amp; estrategia</span>
             </span>
           </a>
 

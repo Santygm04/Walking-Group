@@ -1,0 +1,57 @@
+.trustbar {
+  border-block: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.trustbar__inner {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  padding-block: 22px;
+}
+
+.trustbar__label {
+  flex: none;
+  max-width: 16ch;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.trustbar__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 36px;
+  flex: 1;
+}
+
+.trustbar__list li {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #9aa0a6;
+}
+
+@media (max-width: 900px) {
+  .trustbar__inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .trustbar__label {
+    max-width: none;
+  }
+
+  .trustbar__list {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 12px 28px;
+  }
+}

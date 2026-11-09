@@ -97,18 +97,12 @@ export default function Contact({ selectedService, selectionToken }) {
 
   return (
     <section id="contacto" className="section contact">
-      <span className="contact__ghost" aria-hidden="true">
-        Mambo
-      </span>
-
       <div className="container">
-        <div className="contact__layout">
-          <div className="contact__intro">
+        <div className="contact-panel">
+          <div className="contact-panel__intro">
             <p className="section-label">05 — Contacto</p>
-            <h2 className="section-title" data-reveal>
-              Hablemos de tu
-              <br />
-              <span className="serif">próximo mercado.</span>
+            <h2 className="contact-panel__title" data-reveal>
+              Hablemos de tu próximo <span className="accent">proyecto.</span>
             </h2>
             <p className="contact__lead" data-reveal style={{ "--reveal-delay": "120ms" }}>
               Contanos qué necesitás entender. Te respondemos con alcance, tiempos y un plan de estudio a medida.
@@ -171,7 +165,7 @@ export default function Contact({ selectedService, selectionToken }) {
             </div>
           </div>
 
-          <div className="contact__form-wrap" data-reveal="right" style={{ "--reveal-delay": "120ms" }}>
+          <div className="contact-panel__form" data-reveal="right" style={{ "--reveal-delay": "120ms" }}>
             <form className="contact-form" onSubmit={handleSubmit}>
               <div className="contact-form__head">
                 <div>
