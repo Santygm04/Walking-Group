@@ -319,4 +319,8 @@
   .map-point__label {
     font-size: 0.5625rem;
   }
+
+  .coverage__coord {
+    display: none;
+  }
 }

@@ -11,7 +11,7 @@ const BARS = [
 
 function Chart() {
   return (
-    <svg className="hero-card__chart" viewBox="0 0 320 110" fill="none" aria-hidden="true">
+    <svg className="hero-card__chart" viewBox="0 0 328 110" fill="none" aria-hidden="true">
       <defs>
         <linearGradient id="hero-area" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#e8632c" stopOpacity="0.2" />

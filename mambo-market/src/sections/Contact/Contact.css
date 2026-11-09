@@ -445,7 +445,7 @@
 
 @media (max-width: 640px) {
   .contact-panel {
-    padding: 20px;
+    padding: 16px;
     border-radius: var(--radius);
   }
 
@@ -454,11 +454,20 @@
   }
 
   .contact-form {
-    padding: 20px;
+    padding: 18px;
   }
 
   .contact-form__head {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .contact-form__submit {
+    gap: 8px;
+    padding-inline: 14px;
+  }
+
+  .contact-form__submit svg {
+    width: 17px;
   }
 }

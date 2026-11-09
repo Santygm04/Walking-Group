@@ -16,7 +16,7 @@ function OfficeCard({ office }) {
         </span>
       </div>
       <h4>{office.shortCity}</h4>
-      <p className="office-card__country">{office.country}</p>
+      {office.country !== office.shortCity ? <p className="office-card__country">{office.country}</p> : null}
       <p className="office-card__coords">{office.coords}</p>
     </article>
   )

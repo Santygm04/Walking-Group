@@ -159,9 +159,18 @@
     min-height: 0;
   }
 
+  .service-card__cta {
+    min-height: 44px;
+    padding-block: 14px 0;
+  }
+
   .services__note {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .services__note .link-arrow {
+    min-height: 44px;
   }
 }
