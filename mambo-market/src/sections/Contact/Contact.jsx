@@ -181,7 +181,15 @@ export default function Contact({ selectedService, selectionToken }) {
                 <span className="contact-form__badge">Respuesta &lt; 24 h</span>
               </div>
 
-              <div className="form-grid">
+              <p className="contact-form__hint">
+                Completá los datos y te enviamos una propuesta a medida. Los campos con <span>*</span> son obligatorios.
+              </p>
+
+              <fieldset className="form-section">
+                <legend>
+                  <span>01</span> Tus datos
+                </legend>
+                <div className="form-grid">
                 <div className="field">
                   <label htmlFor="nombre">
                     Nombre completo <span aria-hidden="true">*</span>
@@ -245,7 +253,14 @@ export default function Contact({ selectedService, selectionToken }) {
                     required
                   />
                 </div>
+                </div>
+              </fieldset>
 
+              <fieldset className="form-section">
+                <legend>
+                  <span>02</span> Tu proyecto
+                </legend>
+                <div className="form-grid">
                 <div className={`field field--full ${highlighted ? "is-highlighted" : ""}`}>
                   <label htmlFor="tipoServicio">
                     Servicio de interés <span aria-hidden="true">*</span>
@@ -290,6 +305,27 @@ export default function Contact({ selectedService, selectionToken }) {
                   </select>
                 </div>
 
+                <div className="field field--full">
+                  <label htmlFor="mensaje">
+                    Detalles del proyecto <span aria-hidden="true">*</span>
+                  </label>
+                  <textarea
+                    id="mensaje"
+                    name="mensaje"
+                    value={form.mensaje}
+                    onChange={handleChange}
+                    placeholder="Describí tu proyecto, objetivos, mercado objetivo y cualquier dato que nos ayude a preparar una propuesta personalizada."
+                    required
+                  />
+                </div>
+                </div>
+              </fieldset>
+
+              <fieldset className="form-section">
+                <legend>
+                  <span>03</span> Reunión <em>opcional</em>
+                </legend>
+                <div className="form-grid">
                 <div className="field">
                   <label htmlFor="fechaPreferida">Fecha preferida</label>
                   <input
@@ -314,20 +350,8 @@ export default function Contact({ selectedService, selectionToken }) {
                   </select>
                 </div>
 
-                <div className="field field--full">
-                  <label htmlFor="mensaje">
-                    Detalles del proyecto <span aria-hidden="true">*</span>
-                  </label>
-                  <textarea
-                    id="mensaje"
-                    name="mensaje"
-                    value={form.mensaje}
-                    onChange={handleChange}
-                    placeholder="Describí tu proyecto, objetivos, mercado objetivo y cualquier dato que nos ayude a preparar una propuesta personalizada."
-                    required
-                  />
                 </div>
-              </div>
+              </fieldset>
 
               <button type="submit" className="btn btn--full contact-form__submit">
                 Enviar consulta por WhatsApp

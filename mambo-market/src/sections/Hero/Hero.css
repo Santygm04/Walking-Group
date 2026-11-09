@@ -44,10 +44,10 @@
   justify-content: space-between;
   gap: 24px;
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   line-height: 1.5;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -113,7 +113,7 @@
 
 .hero__lede {
   max-width: 48ch;
-  font-size: clamp(1.02rem, 1.3vw, 1.16rem);
+  font-size: clamp(1.075rem, 1.35vw, 1.22rem);
   line-height: 1.7;
   color: var(--muted);
 }
@@ -147,17 +147,17 @@
 }
 
 .hero__meta dt {
-  margin-bottom: 4px;
+  margin-bottom: 5px;
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--orange-deep);
 }
 
 .hero__meta dd {
-  font-size: 0.84rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--ink);
@@ -287,10 +287,10 @@
 
 .report__kicker {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.56);
+  color: rgba(244, 241, 234, 0.62);
 }
 
 .report__score {
@@ -373,15 +373,15 @@
 
 .report__bar {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) 24px;
+  grid-template-columns: 128px minmax(0, 1fr) 24px;
   align-items: center;
   gap: 10px;
 }
 
 .report__bar-label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.3;
-  color: rgba(244, 241, 234, 0.62);
+  color: rgba(244, 241, 234, 0.68);
 }
 
 .report__bar-track {
@@ -407,7 +407,7 @@
 
 .report__bar-value {
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   text-align: right;
   color: var(--bone);
 }
@@ -421,9 +421,9 @@
   padding-top: 13px;
   border-top: 1px solid var(--line-dark);
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   letter-spacing: 0.08em;
-  color: rgba(244, 241, 234, 0.46);
+  color: rgba(244, 241, 234, 0.54);
 }
 
 .hero__chip-position {
@@ -478,10 +478,10 @@
 
 .hero__chip small {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   font-family: var(--font-mono);
-  font-size: 0.5rem;
-  letter-spacing: 0.1em;
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -692,7 +692,7 @@
   }
 
   .report__bar {
-    grid-template-columns: 96px minmax(0, 1fr) 22px;
+    grid-template-columns: 112px minmax(0, 1fr) 22px;
     gap: 8px;
   }
 

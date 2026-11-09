@@ -83,10 +83,10 @@
 
 .brand__sub {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.5625rem;
   font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.17em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted);
   transition: color 0.3s var(--ease-out);
@@ -101,11 +101,10 @@
 .desktop-nav a {
   position: relative;
   padding-block: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0;
   color: var(--ink);
   transition: color 0.3s var(--ease-out);
 }
@@ -146,8 +145,8 @@
 
 .site-header__cta {
   min-height: 48px;
-  padding: 4px 5px 4px 20px;
-  font-size: 0.6875rem;
+  padding: 4px 6px 4px 22px;
+  font-size: 0.8125rem;
   gap: 12px;
 }
 
@@ -335,7 +334,7 @@
   margin-top: auto;
   padding-top: 40px;
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   color: var(--muted-light);
 }
@@ -379,8 +378,8 @@
   }
 
   .brand__sub {
-    font-size: 0.4375rem;
-    letter-spacing: 0.15em;
+    font-size: 0.5rem;
+    letter-spacing: 0.13em;
   }
 
   .mobile-menu {

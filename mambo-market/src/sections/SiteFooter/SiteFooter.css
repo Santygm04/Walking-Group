@@ -80,17 +80,17 @@
   display: block;
   margin-top: 3px;
   font-family: var(--font-mono);
-  font-size: 0.4375rem;
+  font-size: 0.5rem;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--muted-light);
 }
 
 .site-footer__brand > p {
-  max-width: 34ch;
+  max-width: 36ch;
   margin-bottom: 22px;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.7;
   color: var(--muted-light);
 }
@@ -98,9 +98,9 @@
 .site-footer__col h3 {
   margin-bottom: 16px;
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--orange);
 }
@@ -114,8 +114,8 @@
 .site-footer__col a {
   display: block;
   width: fit-content;
-  padding-block: 4px;
-  font-size: 0.875rem;
+  padding-block: 5px;
+  font-size: 0.9375rem;
   color: var(--muted-light);
   transition: color 0.3s var(--ease-out);
 }
@@ -132,15 +132,15 @@
   display: block;
   margin-bottom: 2px;
   font-family: var(--font-mono);
-  font-size: 0.4375rem;
-  letter-spacing: 0.1em;
+  font-size: 0.5625rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--orange);
 }
 
 .site-footer__office strong {
   display: block;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.35;
   color: var(--bone);
@@ -148,17 +148,17 @@
 
 .site-footer__office p {
   margin-top: 2px;
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: rgba(244, 241, 234, 0.45);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgba(244, 241, 234, 0.52);
 }
 
 .site-footer__person {
   margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 0.5rem;
-  letter-spacing: 0.04em;
-  color: rgba(244, 241, 234, 0.45);
+  font-size: 0.625rem;
+  letter-spacing: 0.03em;
+  color: rgba(244, 241, 234, 0.52);
 }
 
 .site-footer__wordmark {
@@ -193,9 +193,9 @@
   padding-block: 22px;
   border-top: 1px solid var(--line-dark);
   font-family: var(--font-mono);
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   letter-spacing: 0.03em;
-  color: rgba(244, 241, 234, 0.45);
+  color: rgba(244, 241, 234, 0.52);
 }
 
 .site-footer__credit a {

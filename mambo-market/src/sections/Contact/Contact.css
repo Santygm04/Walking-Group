@@ -55,11 +55,11 @@
 }
 
 .contact__lead {
-  max-width: 44ch;
+  max-width: 46ch;
   margin-top: 24px;
-  font-size: clamp(1rem, 1.25vw, 1.1rem);
+  font-size: clamp(1.0625rem, 1.25vw, 1.15rem);
   line-height: 1.7;
-  color: rgba(13, 12, 10, 0.72);
+  color: rgba(13, 12, 10, 0.78);
 }
 
 .contact__direct {
@@ -99,15 +99,15 @@
 
 .contact__direct-item small {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(13, 12, 10, 0.56);
+  color: rgba(13, 12, 10, 0.6);
 }
 
 .contact__direct-item strong {
-  font-size: 0.94rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: 0.01em;
@@ -148,9 +148,9 @@
 }
 
 .contact__promise p {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.6;
-  color: rgba(13, 12, 10, 0.75);
+  color: rgba(13, 12, 10, 0.8);
 }
 
 .contact__promise strong {
@@ -166,12 +166,12 @@
 }
 
 .contact__offices span {
-  padding: 6px 9px;
+  padding: 7px 10px;
   border: 1px solid rgba(13, 12, 10, 0.32);
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -208,9 +208,9 @@
 .contact-form__kicker {
   margin-bottom: 6px;
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--orange-deep);
 }
@@ -225,22 +225,74 @@
 
 .contact-form__badge {
   flex: none;
-  padding: 5px 8px;
+  padding: 6px 9px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
   font-family: var(--font-mono);
-  font-size: 0.4375rem;
+  font-size: 0.5625rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--muted);
+}
+
+.contact-form__hint {
+  margin-top: 16px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.contact-form__hint span {
+  color: var(--orange-deep);
+  font-weight: 700;
+}
+
+.form-section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form-section + .form-section {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.form-section legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.form-section legend span {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--orange-deep);
+}
+
+.form-section legend em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 16px;
-  margin-top: 22px;
+  gap: 16px 18px;
 }
 
 .field {
@@ -254,13 +306,12 @@
 }
 
 .field label {
-  margin-bottom: 6px;
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
+  margin-bottom: 7px;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #4d473e;
 }
 
 .field label span {
@@ -271,13 +322,13 @@
 .field select,
 .field textarea {
   width: 100%;
-  min-height: 46px;
-  padding: 10px 12px;
+  min-height: 50px;
+  padding: 12px 14px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--bone);
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.4;
   color: var(--ink);
   transition:
@@ -297,14 +348,14 @@
 }
 
 .field textarea {
-  min-height: 116px;
-  padding-block: 11px;
+  min-height: 128px;
+  padding-block: 13px;
   resize: vertical;
 }
 
 .field input::placeholder,
 .field textarea::placeholder {
-  color: #928b7f;
+  color: #7b7367;
 }
 
 .field input:focus,
@@ -331,16 +382,16 @@
 }
 
 .contact-form__submit {
-  margin-top: 20px;
-  font-size: 0.625rem;
+  margin-top: 24px;
+  font-size: 0.8125rem;
 }
 
 .contact-form__note {
-  margin-top: 10px;
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  line-height: 1.6;
-  letter-spacing: 0.02em;
+  margin-top: 12px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   color: var(--muted);
 }
 
@@ -349,9 +400,9 @@
   align-items: flex-start;
   gap: 8px;
   margin-top: 14px;
-  padding: 10px 12px;
-  font-size: 0.78rem;
-  line-height: 1.5;
+  padding: 11px 13px;
+  font-size: 0.875rem;
+  line-height: 1.55;
 }
 
 .contact-form__status:empty {
