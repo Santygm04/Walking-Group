@@ -81,6 +81,10 @@ export default function ConfirmationPage({ token }) {
 
   useEffect(() => {
     document.title = "Confirmar reunión — Mambo Market"
+    const robots = document.createElement("meta")
+    robots.name = "robots"
+    robots.content = "noindex, nofollow"
+    document.head.appendChild(robots)
     let cancelled = false
 
     fetch(`/api/confirm?token=${encodeURIComponent(token)}`, { headers: { Accept: "application/json" } })
@@ -90,6 +94,17 @@ export default function ConfirmationPage({ token }) {
           throw new Error(data.message || "El enlace de confirmación no es válido o venció.")
         }
         if (cancelled) return
+
+        if (data.meeting?.status === "confirmed") {
+          setState({ status: "confirmed", meeting: data.meeting, message: data.meeting.email })
+          return
+        }
+
+        if (data.meeting?.status === "cancelled") {
+          setState({ status: "cancelled", meeting: data.meeting, message: "" })
+          return
+        }
+
         setState({ status: "ready", meeting: data.meeting, message: "" })
       })
       .catch((error) => {
@@ -99,6 +114,7 @@ export default function ConfirmationPage({ token }) {
 
     return () => {
       cancelled = true
+      robots.remove()
     }
   }, [token])
 
@@ -116,6 +132,10 @@ export default function ConfirmationPage({ token }) {
       const data = await response.json().catch(() => ({}))
 
       if (!response.ok) {
+        if (data.error === "REQUEST_CANCELLED") {
+          setState((previous) => ({ ...previous, status: "cancelled", message: data.message || "" }))
+          return
+        }
         throw new Error(data.message || "No pudimos confirmar la reunión.")
       }
 
@@ -209,6 +229,23 @@ export default function ConfirmationPage({ token }) {
                 acordados.
               </p>
               <MeetingDetails meeting={state.meeting} />
+              <a className="btn btn--ghost" href="/">
+                Volver al sitio
+              </a>
+            </div>
+          ) : null}
+
+          {state.status === "cancelled" && state.meeting ? (
+            <div className="confirm-card confirm-card--center">
+              <span className="confirm-state-icon confirm-state-icon--error" aria-hidden="true">
+                <Icon name="x" size={24} />
+              </span>
+              <p className="confirm-card__eyebrow">Reunión cancelada</p>
+              <h1>Esta solicitud fue cancelada.</h1>
+              <p className="confirm-card__lead">
+                No se puede confirmar desde este enlace. Si necesitás reprogramar, escribinos a{" "}
+                <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+              </p>
               <a className="btn btn--ghost" href="/">
                 Volver al sitio
               </a>

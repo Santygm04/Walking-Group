@@ -226,6 +226,14 @@
   color: var(--muted);
 }
 
+.hp-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .contact-form__hint span {
   font-weight: 700;
   color: var(--orange-deep);

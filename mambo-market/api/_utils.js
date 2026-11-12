@@ -321,3 +321,114 @@ export function buildConfirmedEmail(meeting) {
     text,
   }
 }
+
+export function sanitizeLine(value, maxLength = 200) {
+  return String(value ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, maxLength)
+}
+
+export function sanitizeMultiline(value, maxLength = 4000) {
+  return String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, maxLength)
+}
+
+export function buildCancelledEmail(record, reason = "") {
+  const rows = [
+    ["Fecha", formatDateLong(record.date)],
+    ["Horario", formatTime(record.time)],
+    ["Servicio", record.service],
+  ]
+
+  const safeReason = sanitizeMultiline(reason, 500)
+
+  const html = emailShell({
+    title: "Solicitud cancelada",
+    preheader: "La reunión con Mambo Market fue cancelada.",
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Reunión cancelada</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Hola, ${escapeHtml(record.name)}</h1>
+      <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:#5d6670;">
+        Te escribimos para avisarte que la reunión que teníamos agendada fue cancelada.
+      </p>
+      ${detailsTable(rows)}
+      ${
+        safeReason
+          ? `<p style="margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#fdf0e8;font-size:13px;line-height:1.6;color:#b8430f;">${escapeHtml(safeReason).replace(/\n/g, "<br />")}</p>`
+          : ""
+      }
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+        Si querés coordinar un nuevo horario, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
+      </p>
+    `,
+  })
+
+  const text = [
+    `Hola, ${record.name}:`,
+    "",
+    "La reunión con Mambo Market fue cancelada.",
+    `Fecha: ${formatDateLong(record.date)}`,
+    `Horario: ${formatTime(record.time)}`,
+    `Servicio: ${record.service}`,
+    safeReason ? `\nMotivo: ${safeReason}` : "",
+    "",
+    `Si querés coordinar un nuevo horario, respondé este email o escribinos a ${getContactEmail()}.`,
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  return {
+    subject: "Reunión cancelada — Mambo Market",
+    html,
+    text,
+  }
+}
+
+export function buildReplyEmail(record, subject, message) {
+  const safeSubject = sanitizeLine(subject, 160) || "Respuesta de Mambo Market"
+  const safeMessage = sanitizeMultiline(message, 5000)
+  const htmlMessage = escapeHtml(safeMessage).replace(/\n/g, "<br />")
+  const rows = [
+    ["Fecha de la reunión", formatDateLong(record.date)],
+    ["Horario", formatTime(record.time)],
+    ["Servicio", record.service],
+  ]
+
+  const html = emailShell({
+    title: safeSubject,
+    preheader: "Mensaje del equipo de Mambo Market.",
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Mensaje del equipo</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Hola, ${escapeHtml(record.name)}</h1>
+      <div style="margin:18px 0;padding:16px 18px;border-left:3px solid #e8632c;background:#f7f7f4;font-size:14px;line-height:1.7;color:#111a23;">
+        ${htmlMessage}
+      </div>
+      ${detailsTable(rows)}
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+        Podés responder este email o escribirnos a ${escapeHtml(getContactEmail())}.
+      </p>
+    `,
+  })
+
+  return {
+    subject: `${safeSubject} — Mambo Market`,
+    html,
+    text: [
+      `Hola, ${record.name}:`,
+      "",
+      safeMessage,
+      "",
+      `Fecha de la reunión: ${formatDateLong(record.date)}`,
+      `Horario: ${formatTime(record.time)}`,
+      `Servicio: ${record.service}`,
+      "",
+      `Respondé este email o escribinos a ${getContactEmail()}.`,
+    ].join("\n"),
+  }
+}

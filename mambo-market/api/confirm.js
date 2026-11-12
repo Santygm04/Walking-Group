@@ -5,6 +5,8 @@ import {
   parseBody,
   verifyToken,
 } from "./_utils.js"
+import { getRequest, updateRequest } from "./_storage.js"
+import { getClientIp, rateLimit, sendRateLimitResponse } from "./_security.js"
 
 function readToken(req) {
   if (req.method === "GET") {
@@ -21,6 +23,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "METHOD_NOT_ALLOWED", message: "Método no permitido." })
   }
 
+  const ip = getClientIp(req)
+  const limit = await rateLimit({ key: `confirm:${ip}`, limit: 30, windowSeconds: 900 })
+  if (!limit.allowed) {
+    return sendRateLimitResponse(res, limit.retryAfter)
+  }
+
   const token = readToken(req)
   if (!token) {
     return res.status(400).json({ error: "MISSING_TOKEN", message: "Falta el enlace de confirmación." })
@@ -34,6 +42,13 @@ export default async function handler(req, res) {
     })
   }
 
+  let stored = null
+  try {
+    stored = await getRequest(payload.requestId)
+  } catch (error) {
+    console.error("confirm-storage-read-error", error?.message)
+  }
+
   const meeting = {
     name: payload.nombre,
     company: payload.empresa,
@@ -42,10 +57,27 @@ export default async function handler(req, res) {
     service: payload.servicio,
     date: payload.fecha,
     time: payload.hora,
+    status: stored?.status || "pending",
   }
 
   if (req.method === "GET") {
     return res.status(200).json({ ok: true, meeting })
+  }
+
+  if (stored?.status === "confirmed") {
+    return res.status(200).json({
+      ok: true,
+      alreadyConfirmed: true,
+      email: payload.email,
+      meeting,
+    })
+  }
+
+  if (stored?.status === "cancelled") {
+    return res.status(409).json({
+      error: "REQUEST_CANCELLED",
+      message: "Esta solicitud fue cancelada. Contactá al equipo para reprogramarla.",
+    })
   }
 
   try {
@@ -60,7 +92,19 @@ export default async function handler(req, res) {
       html: email.html,
     })
 
-    return res.status(200).json({ ok: true, email: payload.email, meeting })
+    if (stored) {
+      try {
+        await updateRequest(payload.requestId, (current) => ({
+          ...current,
+          status: "confirmed",
+          confirmedAt: Date.now(),
+        }))
+      } catch (error) {
+        console.error("confirm-storage-update-error", error?.message)
+      }
+    }
+
+    return res.status(200).json({ ok: true, email: payload.email, meeting: { ...meeting, status: "confirmed" } })
   } catch (error) {
     console.error("confirm-request-error", error?.message)
 

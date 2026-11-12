@@ -23,6 +23,7 @@ const INITIAL_FORM = {
   fechaPreferida: "",
   horaPreferida: "",
   mensaje: "",
+  website: "",
 }
 
 function buildMessage(form) {
@@ -189,6 +190,19 @@ export default function Contact({ selectedService, selectionToken }) {
               <p className="contact-form__hint">
                 Completá los datos y te enviamos una propuesta a medida. Los campos con <span>*</span> son obligatorios.
               </p>
+
+              <div className="hp-field" aria-hidden="true">
+                <label htmlFor="website">No completar este campo</label>
+                <input
+                  id="website"
+                  name="website"
+                  type="text"
+                  value={form.website}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
 
               <fieldset className="form-section">
                 <legend>

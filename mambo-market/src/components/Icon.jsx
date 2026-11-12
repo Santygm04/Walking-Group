@@ -7,6 +7,46 @@ const ICONS = {
   plus: { paths: <path d="M12 5v14M5 12h14" /> },
   minus: { paths: <path d="M5 12h14" /> },
   check: { paths: <path d="M20 6 9 17l-5-5" /> },
+  x: { paths: <path d="M6 6l12 12M18 6 6 18" /> },
+  search: {
+    paths: (
+      <>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </>
+    ),
+  },
+  refresh: {
+    paths: (
+      <>
+        <path d="M20 11a8 8 0 1 0 2 5" />
+        <path d="M20 4v7h-7" />
+      </>
+    ),
+  },
+  "log-out": {
+    paths: (
+      <>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <path d="m16 17 5-5-5-5M21 12H9" />
+      </>
+    ),
+  },
+  eye: {
+    paths: (
+      <>
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ),
+  },
+  "eye-off": {
+    paths: (
+      <>
+        <path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.3 17.3 0 0 1-3.9 4.8M6.6 6.6A16.7 16.7 0 0 0 2 12s3.5 7 10 7c1 0 1.9-.2 2.8-.5" />
+      </>
+    ),
+  },
   "map-pin": {
     paths: (
       <>

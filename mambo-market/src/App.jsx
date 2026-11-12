@@ -10,6 +10,7 @@ import Clients from "./sections/Clients/Clients"
 import Contact from "./sections/Contact/Contact"
 import SiteFooter from "./sections/SiteFooter/SiteFooter"
 import ConfirmationPage from "./pages/ConfirmationPage"
+import AdminPage from "./pages/AdminPage"
 import { useMagnetic, usePrefersReducedMotion, useRevealOnScroll } from "./hooks/useUI"
 
 function LandingPage() {
@@ -52,6 +53,10 @@ function LandingPage() {
 }
 
 export default function App() {
+  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin") {
+    return <AdminPage />
+  }
+
   const token = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("confirmar") : ""
 
   if (token) {

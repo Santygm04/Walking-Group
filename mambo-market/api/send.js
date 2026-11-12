@@ -8,8 +8,12 @@ import {
   getFromAddress,
   isValidEmail,
   parseBody,
+  sanitizeLine,
+  sanitizeMultiline,
   signToken,
 } from "./_utils.js"
+import { saveRequest, storageConfigured } from "./_storage.js"
+import { getClientIp, rateLimit, sendRateLimitResponse } from "./_security.js"
 
 const REQUIRED_FIELDS = [
   "nombre",
@@ -22,10 +26,6 @@ const REQUIRED_FIELDS = [
   "horaPreferida",
 ]
 
-function clean(value, maxLength = 500) {
-  return String(value ?? "").trim().slice(0, maxLength)
-}
-
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store")
 
@@ -33,19 +33,30 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "METHOD_NOT_ALLOWED", message: "Método no permitido." })
   }
 
+  const ip = getClientIp(req)
+  const limit = await rateLimit({ key: `send:${ip}`, limit: 5, windowSeconds: 600 })
+  if (!limit.allowed) {
+    return sendRateLimitResponse(res, limit.retryAfter)
+  }
+
   try {
     const body = parseBody(req)
+
+    if (sanitizeLine(body.website, 200)) {
+      return res.status(200).json({ ok: true })
+    }
+
     const form = {
-      nombre: clean(body.nombre, 120),
-      empresa: clean(body.empresa, 160),
-      email: clean(body.email, 180).toLowerCase(),
-      telefono: clean(body.telefono, 60),
-      tipoServicio: clean(body.tipoServicio, 160),
-      presupuesto: clean(body.presupuesto, 120),
-      urgencia: clean(body.urgencia, 120),
-      fechaPreferida: clean(body.fechaPreferida, 10),
-      horaPreferida: clean(body.horaPreferida, 5),
-      mensaje: clean(body.mensaje, 4000),
+      nombre: sanitizeLine(body.nombre, 120),
+      empresa: sanitizeLine(body.empresa, 160),
+      email: sanitizeLine(body.email, 180).toLowerCase(),
+      telefono: sanitizeLine(body.telefono, 60),
+      tipoServicio: sanitizeLine(body.tipoServicio, 160),
+      presupuesto: sanitizeLine(body.presupuesto, 120),
+      urgencia: sanitizeLine(body.urgencia, 120),
+      fechaPreferida: sanitizeLine(body.fechaPreferida, 10),
+      horaPreferida: sanitizeLine(body.horaPreferida, 5),
+      mensaje: sanitizeMultiline(body.mensaje, 4000),
     }
 
     const missing = REQUIRED_FIELDS.filter((field) => !form[field])
@@ -57,7 +68,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "INVALID_EMAIL", message: "El email ingresado no es válido." })
     }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.fechaPreferida)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.fechaPreferida) || Number.isNaN(new Date(`${form.fechaPreferida}T12:00:00Z`).getTime())) {
       return res.status(400).json({ error: "INVALID_DATE", message: "La fecha ingresada no es válida." })
     }
 
@@ -70,8 +81,38 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "INVALID_TIME", message: "El horario ingresado no es válido." })
     }
 
+    const id = crypto.randomUUID()
+    const createdAt = Date.now()
+    const record = {
+      id,
+      createdAt,
+      status: "pending",
+      name: form.nombre,
+      company: form.empresa,
+      email: form.email,
+      phone: form.telefono,
+      service: form.tipoServicio,
+      budget: form.presupuesto,
+      urgency: form.urgencia,
+      date: form.fechaPreferida,
+      time: form.horaPreferida,
+      message: form.mensaje,
+      replies: [],
+    }
+
+    let stored = false
+    try {
+      stored = await saveRequest(record)
+    } catch (storageError) {
+      console.error("send-storage-error", storageError?.message)
+    }
+
+    if (storageConfigured() && !stored) {
+      console.error("send-storage-not-persisted", id)
+    }
+
     const payload = {
-      requestId: crypto.randomUUID(),
+      requestId: id,
       nombre: form.nombre,
       email: form.email,
       telefono: form.telefono,
@@ -106,7 +147,7 @@ export default async function handler(req, res) {
       html: pendingEmail.html,
     })
 
-    return res.status(200).json({ ok: true })
+    return res.status(200).json({ ok: true, stored })
   } catch (error) {
     console.error("send-request-error", error?.message)
 

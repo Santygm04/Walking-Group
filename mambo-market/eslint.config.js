@@ -32,6 +32,7 @@ export default defineConfig([
       globals: globals.node,
     },
     rules: {
+      'no-control-regex': 'off',
       'react-refresh/only-export-components': 'off',
     },
   },
