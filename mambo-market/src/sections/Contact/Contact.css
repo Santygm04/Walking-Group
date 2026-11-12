@@ -312,6 +312,15 @@
   color: var(--muted-2);
 }
 
+.field__extra-label {
+  margin-top: 8px;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--muted-2);
+}
+
 .field input,
 .field select,
 .field textarea {

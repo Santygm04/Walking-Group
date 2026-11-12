@@ -12,6 +12,8 @@ import {
 } from "../../data/siteData"
 import "./Contact.css"
 
+const CUSTOM_OPTION = "Otro / personalizado"
+
 const INITIAL_FORM = {
   nombre: "",
   empresa: "",
@@ -19,7 +21,9 @@ const INITIAL_FORM = {
   telefono: "",
   tipoServicio: "",
   presupuesto: "",
+  presupuestoOtro: "",
   urgencia: "",
+  urgenciaOtro: "",
   fechaPreferida: "",
   horaPreferida: "",
   mensaje: "",
@@ -71,6 +75,18 @@ export default function Contact({ selectedService, selectionToken }) {
     setForm((previous) => ({ ...previous, [name]: value }))
   }
 
+  const buildPayload = () => {
+    const payload = {
+      ...form,
+      presupuesto: form.presupuesto === CUSTOM_OPTION ? form.presupuestoOtro.trim() : form.presupuesto,
+      urgencia: form.urgencia === CUSTOM_OPTION ? form.urgenciaOtro.trim() : form.urgencia,
+    }
+
+    delete payload.presupuestoOtro
+    delete payload.urgenciaOtro
+    return payload
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (status.type === "sending") return
@@ -78,10 +94,11 @@ export default function Contact({ selectedService, selectionToken }) {
     setStatus({ type: "sending", message: "", fallback: "" })
 
     try {
+      const payload = buildPayload()
       const response = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const data = await response.json().catch(() => ({}))
 
@@ -95,7 +112,7 @@ export default function Contact({ selectedService, selectionToken }) {
         fallback: "",
       })
     } catch (error) {
-      const fallback = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(form))}`
+      const fallback = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(buildPayload()))}`
       setStatus({
         type: "error",
         message: `${error.message} También podés escribirnos por WhatsApp mientras tanto.`,
@@ -309,7 +326,26 @@ export default function Contact({ selectedService, selectionToken }) {
                         {option}
                       </option>
                     ))}
+                    <option value={CUSTOM_OPTION}>Otro / personalizado</option>
                   </select>
+                  {form.presupuesto === CUSTOM_OPTION ? (
+                    <>
+                      <label htmlFor="presupuestoOtro" className="field__extra-label">
+                        Especificá tu presupuesto
+                      </label>
+                      <input
+                        type="text"
+                        id="presupuestoOtro"
+                        name="presupuestoOtro"
+                        value={form.presupuestoOtro}
+                        onChange={handleChange}
+                        placeholder="Ej: USD 8.000 o a convenir"
+                        maxLength={120}
+                        autoComplete="off"
+                        required
+                      />
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="field">
@@ -321,7 +357,26 @@ export default function Contact({ selectedService, selectionToken }) {
                         {option}
                       </option>
                     ))}
+                    <option value={CUSTOM_OPTION}>Otro / personalizado</option>
                   </select>
+                  {form.urgencia === CUSTOM_OPTION ? (
+                    <>
+                      <label htmlFor="urgenciaOtro" className="field__extra-label">
+                        Especificá la urgencia
+                      </label>
+                      <input
+                        type="text"
+                        id="urgenciaOtro"
+                        name="urgenciaOtro"
+                        value={form.urgenciaOtro}
+                        onChange={handleChange}
+                        placeholder="Ej: Lo necesitamos esta semana"
+                        maxLength={120}
+                        autoComplete="off"
+                        required
+                      />
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="field field--full">

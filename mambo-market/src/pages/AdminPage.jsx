@@ -320,6 +320,7 @@ function ReplyForm({ request, onSend, sending }) {
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Escribí tu respuesta…"
           maxLength={5000}
+          autoFocus
           required
         />
       </div>
