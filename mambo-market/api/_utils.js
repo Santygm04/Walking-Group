@@ -39,7 +39,7 @@ export function getSiteUrl() {
 }
 
 export function getAdminEmail() {
-  return process.env.ADMIN_EMAIL || FALLBACK_CONTACT_EMAIL
+  return process.env.ADMIN_EMAIL || "santiagogilmina2@gmail.com"
 }
 
 export function getContactEmail() {
