@@ -404,6 +404,13 @@
   color: var(--muted-2);
 }
 
+.contact-form__note a {
+  color: var(--orange-deep);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .contact-form__status {
   display: flex;
   align-items: flex-start;

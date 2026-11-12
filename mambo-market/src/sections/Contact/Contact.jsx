@@ -442,7 +442,11 @@ export default function Contact({ selectedService, selectionToken }) {
 
               <p className="contact-form__note">
                 Al enviar, te llega un email de recepción y el equipo recibe los detalles. La confirmación final llega
-                por email.
+                por email. Al continuar aceptás la{" "}
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer">
+                  política de privacidad
+                </a>
+                .
               </p>
 
               <div className={`contact-form__status contact-form__status--${status.type}`} aria-live="polite" role="status">

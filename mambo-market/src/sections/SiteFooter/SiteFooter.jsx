@@ -50,6 +50,11 @@ export default function SiteFooter() {
               Instagram
               <Icon name="arrow-up-right" size={14} />
             </a>
+
+            <div className="site-footer__legal">
+              <a href="/privacidad">Política de privacidad</a>
+              <a href="/terminos">Términos y condiciones</a>
+            </div>
           </div>
 
           <div className="site-footer__col">

@@ -1,6 +1,7 @@
 import {
   buildConfirmedEmail,
   createTransport,
+  getContactEmail,
   getFromAddress,
   parseBody,
   verifyToken,
@@ -87,6 +88,7 @@ export default async function handler(req, res) {
     await transport.sendMail({
       from: getFromAddress(),
       to: payload.email,
+      replyTo: getContactEmail(),
       subject: email.subject,
       text: email.text,
       html: email.html,

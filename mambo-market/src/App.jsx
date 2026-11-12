@@ -11,6 +11,7 @@ import Contact from "./sections/Contact/Contact"
 import SiteFooter from "./sections/SiteFooter/SiteFooter"
 import ConfirmationPage from "./pages/ConfirmationPage"
 import AdminPage from "./pages/AdminPage"
+import LegalPage from "./pages/LegalPage"
 import { useMagnetic, usePrefersReducedMotion, useRevealOnScroll } from "./hooks/useUI"
 
 function LandingPage() {
@@ -53,8 +54,19 @@ function LandingPage() {
 }
 
 export default function App() {
-  if (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/admin") {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname.replace(/\/+$/, "") : ""
+
+  if (pathname === "/admin") {
     return <AdminPage />
+  }
+
+  if (pathname === "/privacidad") {
+    return <LegalPage type="privacy" />
+  }
+
+  if (pathname === "/terminos") {
+    return <LegalPage type="terms" />
   }
 
   const token = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("confirmar") : ""

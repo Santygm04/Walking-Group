@@ -47,6 +47,37 @@ export function getContactEmail() {
 }
 
 export function createTransport() {
+  const resendKey = process.env.RESEND_API_KEY
+
+  if (resendKey) {
+    return {
+      async sendMail(message) {
+        const payload = {
+          from: message.from,
+          to: Array.isArray(message.to) ? message.to : [message.to],
+          subject: message.subject,
+          html: message.html,
+          text: message.text,
+        }
+
+        if (message.replyTo) payload.reply_to = message.replyTo
+
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(`RESEND_${response.status}`)
+        return data
+      },
+    }
+  }
+
   const user = process.env.SMTP_USER
   const pass = process.env.SMTP_PASS
 
@@ -66,8 +97,9 @@ export function createTransport() {
 }
 
 export function getFromAddress() {
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER
-  return `"Mambo Market" <${from}>`
+  const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER
+  if (!from) throw new Error("EMAIL_NOT_CONFIGURED")
+  return from.includes("<") ? from : `"Mambo Market" <${from}>`
 }
 
 export function signToken(payload) {
@@ -143,6 +175,8 @@ function emailShell({ title, preheader, content }) {
             <tr>
               <td style="padding:16px 26px;background:#f7f7f4;border-top:1px solid #ece9e2;font-size:11px;line-height:1.6;color:#7b838c;">
                 Mambo Market · España 1674, San Miguel de Tucumán · ${escapeHtml(getContactEmail())}
+                <br />
+                <a href="${escapeHtml(getSiteUrl())}/privacidad" style="color:#7b838c;text-decoration:underline;">Política de privacidad</a>
               </td>
             </tr>
           </table>

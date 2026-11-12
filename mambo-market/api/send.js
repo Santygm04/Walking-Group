@@ -5,6 +5,7 @@ import {
   buildPendingEmail,
   createTransport,
   getAdminEmail,
+  getContactEmail,
   getFromAddress,
   isValidEmail,
   parseBody,
@@ -145,6 +146,7 @@ export default async function handler(req, res) {
     await transport.sendMail({
       from: getFromAddress(),
       to: form.email,
+      replyTo: getContactEmail(),
       subject: pendingEmail.subject,
       text: pendingEmail.text,
       html: pendingEmail.html,

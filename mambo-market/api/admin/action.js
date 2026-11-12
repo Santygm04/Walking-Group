@@ -7,6 +7,7 @@ import {
   buildReplyEmail,
   buildUpdatedEmail,
   createTransport,
+  getContactEmail,
   getFromAddress,
   isValidEmail,
   parseBody,
@@ -89,6 +90,7 @@ export default async function handler(req, res) {
       await transport.sendMail({
         from: getFromAddress(),
         to: record.email,
+        replyTo: getContactEmail(),
         subject: email.subject,
         text: email.text,
         html: email.html,
@@ -119,6 +121,7 @@ export default async function handler(req, res) {
       await transport.sendMail({
         from: getFromAddress(),
         to: record.email,
+        replyTo: getContactEmail(),
         subject: email.subject,
         text: email.text,
         html: email.html,
@@ -151,7 +154,7 @@ export default async function handler(req, res) {
       await transport.sendMail({
         from: getFromAddress(),
         to: record.email,
-        replyTo: getFromAddress(),
+        replyTo: getContactEmail(),
         subject: email.subject,
         text: email.text,
         html: email.html,
@@ -187,6 +190,7 @@ export default async function handler(req, res) {
       await transport.sendMail({
         from: getFromAddress(),
         to: record.email,
+        replyTo: getContactEmail(),
         subject: email.subject,
         text: email.text,
         html: email.html,
@@ -301,6 +305,7 @@ export default async function handler(req, res) {
         await transport.sendMail({
           from: getFromAddress(),
           to: record.email,
+          replyTo: getContactEmail(),
           subject: email.subject,
           text: email.text,
           html: email.html,

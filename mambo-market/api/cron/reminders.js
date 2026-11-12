@@ -1,7 +1,7 @@
 import crypto from "node:crypto"
 import { safeEqual } from "../_security.js"
 import { listRequests, storageAvailable, updateRequest } from "../_storage.js"
-import { buildReminderEmail, createTransport, getFromAddress, meetingTimestampART } from "../_utils.js"
+import { buildReminderEmail, createTransport, getContactEmail, getFromAddress, meetingTimestampART } from "../_utils.js"
 
 const WINDOW_MS = 36 * 60 * 60 * 1000
 const MAX_PER_RUN = 50
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
         await transport.sendMail({
           from: getFromAddress(),
           to: request.email,
+          replyTo: getContactEmail(),
           subject: email.subject,
           text: email.text,
           html: email.html,
