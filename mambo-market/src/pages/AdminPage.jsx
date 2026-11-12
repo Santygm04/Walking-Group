@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Icon from "../components/Icon"
-import { CONTACT_EMAIL } from "../data/siteData"
+import { BUDGET_OPTIONS, CONTACT_EMAIL, SERVICE_OPTIONS, URGENCY_OPTIONS } from "../data/siteData"
 import "./AdminPage.css"
 
 const STATUS = {
@@ -331,6 +331,11 @@ function ReplyForm({ request, onSend, sending }) {
   )
 }
 
+function optionsWithCurrent(options, current) {
+  if (!current || options.includes(current)) return options
+  return [current, ...options]
+}
+
 function EditForm({ request, onSave, saving }) {
   const [fields, setFields] = useState({
     name: request.name || "",
@@ -345,6 +350,10 @@ function EditForm({ request, onSave, saving }) {
     message: request.message || "",
   })
   const [notifyClient, setNotifyClient] = useState(true)
+
+  const serviceOptions = optionsWithCurrent(SERVICE_OPTIONS, fields.service)
+  const budgetOptions = optionsWithCurrent(BUDGET_OPTIONS, fields.budget)
+  const urgencyOptions = optionsWithCurrent(URGENCY_OPTIONS, fields.urgency)
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -378,11 +387,25 @@ function EditForm({ request, onSave, saving }) {
         </div>
         <div className="admin-field">
           <label htmlFor={`edit-service-${request.id}`}>Servicio</label>
-          <input id={`edit-service-${request.id}`} name="service" value={fields.service} onChange={handleChange} maxLength={160} required />
+          <select id={`edit-service-${request.id}`} name="service" value={fields.service} onChange={handleChange} required>
+            <option value="">Seleccionar servicio…</option>
+            {serviceOptions.map((option) => (
+              <option value={option} key={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="admin-field">
           <label htmlFor={`edit-budget-${request.id}`}>Presupuesto</label>
-          <input id={`edit-budget-${request.id}`} name="budget" value={fields.budget} onChange={handleChange} maxLength={120} />
+          <select id={`edit-budget-${request.id}`} name="budget" value={fields.budget} onChange={handleChange}>
+            <option value="">Sin definir</option>
+            {budgetOptions.map((option) => (
+              <option value={option} key={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="admin-field">
           <label htmlFor={`edit-date-${request.id}`}>Fecha</label>
@@ -391,10 +414,18 @@ function EditForm({ request, onSave, saving }) {
         <div className="admin-field">
           <label htmlFor={`edit-time-${request.id}`}>Horario</label>
           <input id={`edit-time-${request.id}`} name="time" type="time" value={fields.time} onChange={handleChange} required />
+          <small className="admin-field__hint">Elegí cualquier horario.</small>
         </div>
         <div className="admin-field">
           <label htmlFor={`edit-urgency-${request.id}`}>Urgencia</label>
-          <input id={`edit-urgency-${request.id}`} name="urgency" value={fields.urgency} onChange={handleChange} maxLength={120} />
+          <select id={`edit-urgency-${request.id}`} name="urgency" value={fields.urgency} onChange={handleChange}>
+            <option value="">Sin definir</option>
+            {urgencyOptions.map((option) => (
+              <option value={option} key={option}>
+                {option}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
