@@ -432,3 +432,45 @@ export function buildReplyEmail(record, subject, message) {
     ].join("\n"),
   }
 }
+
+export function buildUpdatedEmail(record) {
+  const confirmed = record.status === "confirmed"
+  const rows = [
+    ["Fecha", formatDateLong(record.date)],
+    ["Horario", formatTime(record.time)],
+    ["Servicio", record.service],
+    ["Estado", confirmed ? "Confirmada" : "Pendiente de confirmación"],
+  ]
+
+  const html = emailShell({
+    title: confirmed ? "Reunión actualizada" : "Solicitud actualizada",
+    preheader: "Actualizamos los datos de tu reunión con Mambo Market.",
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Datos actualizados</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Hola, ${escapeHtml(record.name)}</h1>
+      <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:#5d6670;">
+        Actualizamos los datos de tu solicitud de reunión con Mambo Market. Estos son los datos vigentes:
+      </p>
+      ${detailsTable(rows)}
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+        Si necesitás cambiar algo, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
+      </p>
+    `,
+  })
+
+  return {
+    subject: confirmed ? "Reunión actualizada — Mambo Market" : "Solicitud actualizada — Mambo Market",
+    html,
+    text: [
+      `Hola, ${record.name}:`,
+      "",
+      "Actualizamos los datos de tu solicitud de reunión con Mambo Market.",
+      `Fecha: ${formatDateLong(record.date)}`,
+      `Horario: ${formatTime(record.time)}`,
+      `Servicio: ${record.service}`,
+      `Estado: ${confirmed ? "Confirmada" : "Pendiente de confirmación"}`,
+      "",
+      `Si necesitás cambiar algo, respondé este email o escribinos a ${getContactEmail()}.`,
+    ].join("\n"),
+  }
+}

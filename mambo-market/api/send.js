@@ -86,6 +86,7 @@ export default async function handler(req, res) {
     const record = {
       id,
       createdAt,
+      updatedAt: createdAt,
       status: "pending",
       name: form.nombre,
       company: form.empresa,
@@ -98,6 +99,8 @@ export default async function handler(req, res) {
       time: form.horaPreferida,
       message: form.mensaje,
       replies: [],
+      notes: [],
+      history: [{ id: crypto.randomUUID(), type: "created", at: createdAt, by: "Sistema" }],
     }
 
     let stored = false

@@ -16,6 +16,24 @@ const FILTERS = [
   { id: "cancelled", label: "Canceladas" },
 ]
 
+const SORT_OPTIONS = [
+  { id: "newest", label: "Más recientes" },
+  { id: "oldest", label: "Más antiguas" },
+  { id: "meeting", label: "Reunión más próxima" },
+  { id: "name", label: "Nombre A-Z" },
+]
+
+const HISTORY_LABELS = {
+  created: "Solicitud recibida",
+  confirmed: "Reunión confirmada",
+  cancelled: "Reunión cancelada",
+  replied: "Respuesta enviada",
+  edited: "Solicitud editada",
+  note: "Nota interna",
+}
+
+const PAGE_SIZE = 9
+
 function api(path, options = {}) {
   return fetch(path, {
     credentials: "same-origin",
@@ -71,9 +89,102 @@ function initials(name) {
     .join("")
 }
 
+function meetingTimestamp(request) {
+  if (!request.date) return Number.MAX_SAFE_INTEGER
+  const value = new Date(`${request.date}T${request.time || "00:00"}:00`).getTime()
+  return Number.isNaN(value) ? Number.MAX_SAFE_INTEGER : value
+}
+
+function sortRequests(requests, sortBy) {
+  const list = [...requests]
+  if (sortBy === "oldest") return list.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+  if (sortBy === "meeting") return list.sort((a, b) => meetingTimestamp(a) - meetingTimestamp(b))
+  if (sortBy === "name") return list.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es"))
+  return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+}
+
+function csvCell(value) {
+  const text = String(value ?? "")
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+  return `"${safe.replaceAll('"', '""')}"`
+}
+
+function exportRequestsCsv(requests) {
+  const headers = [
+    "Nombre",
+    "Empresa",
+    "Email",
+    "Teléfono",
+    "Servicio",
+    "Fecha",
+    "Horario",
+    "Presupuesto",
+    "Urgencia",
+    "Estado",
+    "Recibida",
+    "Respuestas",
+    "Notas",
+    "Mensaje",
+  ]
+
+  const rows = requests.map((request) => [
+    request.name,
+    request.company,
+    request.email,
+    request.phone,
+    request.service,
+    request.date,
+    request.time,
+    request.budget,
+    request.urgency,
+    STATUS[request.status]?.label || "Pendiente",
+    formatTimestamp(request.createdAt),
+    request.replies?.length || 0,
+    request.notes?.length || 0,
+    request.message,
+  ])
+
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n")
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement("a")
+  anchor.href = url
+  anchor.download = `mambo-solicitudes-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
+}
+
 function StatusBadge({ status }) {
   const meta = STATUS[status] || STATUS.pending
   return <span className={`status-badge ${meta.className}`}>{meta.label}</span>
+}
+
+function CopyButton({ value, label }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(String(value || ""))
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="admin-icon-button"
+      onClick={handleCopy}
+      aria-label={`Copiar ${label}`}
+      title={`Copiar ${label}`}
+    >
+      <Icon name={copied ? "check" : "copy"} size={14} />
+    </button>
+  )
 }
 
 function LoginView({ onLogin }) {
@@ -220,10 +331,174 @@ function ReplyForm({ request, onSend, sending }) {
   )
 }
 
-function DetailDialog({ request, onClose, onAction, actionState, onReply }) {
+function EditForm({ request, onSave, saving }) {
+  const [fields, setFields] = useState({
+    name: request.name || "",
+    company: request.company || "",
+    email: request.email || "",
+    phone: request.phone || "",
+    service: request.service || "",
+    budget: request.budget || "",
+    urgency: request.urgency || "",
+    date: request.date || "",
+    time: request.time || "",
+    message: request.message || "",
+  })
+  const [notifyClient, setNotifyClient] = useState(true)
+
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setFields((previous) => ({ ...previous, [name]: value }))
+  }
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    if (saving) return
+    onSave({ ...fields, notifyClient })
+  }
+
+  return (
+    <form className="admin-edit" onSubmit={handleSubmit}>
+      <div className="admin-edit__grid">
+        <div className="admin-field">
+          <label htmlFor={`edit-name-${request.id}`}>Nombre</label>
+          <input id={`edit-name-${request.id}`} name="name" value={fields.name} onChange={handleChange} maxLength={120} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-company-${request.id}`}>Empresa</label>
+          <input id={`edit-company-${request.id}`} name="company" value={fields.company} onChange={handleChange} maxLength={160} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-email-${request.id}`}>Email</label>
+          <input id={`edit-email-${request.id}`} name="email" type="email" value={fields.email} onChange={handleChange} maxLength={180} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-phone-${request.id}`}>Teléfono</label>
+          <input id={`edit-phone-${request.id}`} name="phone" type="tel" value={fields.phone} onChange={handleChange} maxLength={60} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-service-${request.id}`}>Servicio</label>
+          <input id={`edit-service-${request.id}`} name="service" value={fields.service} onChange={handleChange} maxLength={160} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-budget-${request.id}`}>Presupuesto</label>
+          <input id={`edit-budget-${request.id}`} name="budget" value={fields.budget} onChange={handleChange} maxLength={120} />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-date-${request.id}`}>Fecha</label>
+          <input id={`edit-date-${request.id}`} name="date" type="date" value={fields.date} onChange={handleChange} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-time-${request.id}`}>Horario</label>
+          <input id={`edit-time-${request.id}`} name="time" type="time" value={fields.time} onChange={handleChange} required />
+        </div>
+        <div className="admin-field">
+          <label htmlFor={`edit-urgency-${request.id}`}>Urgencia</label>
+          <input id={`edit-urgency-${request.id}`} name="urgency" value={fields.urgency} onChange={handleChange} maxLength={120} />
+        </div>
+      </div>
+
+      <div className="admin-field">
+        <label htmlFor={`edit-message-${request.id}`}>Mensaje del cliente</label>
+        <textarea
+          id={`edit-message-${request.id}`}
+          name="message"
+          value={fields.message}
+          onChange={handleChange}
+          maxLength={4000}
+          required
+        />
+      </div>
+
+      <label className="admin-checkbox">
+        <input type="checkbox" checked={notifyClient} onChange={(event) => setNotifyClient(event.target.checked)} />
+        <span>Notificar al cliente por email si cambian los datos</span>
+      </label>
+
+      <button type="submit" className="btn btn--accent" disabled={saving}>
+        {saving ? "Guardando…" : "Guardar cambios"}
+        <Icon name="check" size={16} />
+      </button>
+    </form>
+  )
+}
+
+function NotesPanel({ request, onAdd, saving }) {
+  const [text, setText] = useState("")
+  const notes = Array.isArray(request.notes) ? request.notes : []
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    if (!text.trim() || saving) return
+    onAdd({ text })
+    setText("")
+  }
+
+  return (
+    <div className="admin-notes">
+      <form className="admin-note-form" onSubmit={handleSubmit}>
+        <div className="admin-field">
+          <label htmlFor={`note-${request.id}`}>Nueva nota interna</label>
+          <textarea
+            id={`note-${request.id}`}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder="Agregá contexto, próximos pasos o información interna…"
+            maxLength={2000}
+          />
+        </div>
+        <button type="submit" className="btn btn--ghost" disabled={saving || !text.trim()}>
+          Guardar nota
+          <Icon name="note" size={16} />
+        </button>
+      </form>
+
+      {notes.length ? (
+        <div className="admin-note-list">
+          {notes.slice().reverse().map((note) => (
+            <article key={note.id} className="admin-note">
+              <p>{note.text}</p>
+              <span>
+                {note.by || "Admin"} · {formatTimestamp(note.createdAt)}
+              </span>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="admin-tab-empty">Todavía no hay notas internas para esta solicitud.</p>
+      )}
+    </div>
+  )
+}
+
+function HistoryPanel({ request }) {
+  const history = Array.isArray(request.history) && request.history.length
+    ? request.history
+    : [{ id: "created", type: "created", at: request.createdAt, by: "Sistema" }]
+
+  return (
+    <ol className="admin-history-list">
+      {history.slice().reverse().map((event) => (
+        <li key={event.id}>
+          <span className={`admin-history-dot admin-history-dot--${event.type}`} aria-hidden="true" />
+          <div>
+            <strong>{HISTORY_LABELS[event.type] || "Actividad"}</strong>
+            <p>{event.detail || event.by || "Sistema"}</p>
+            <small>{formatTimestamp(event.at)}</small>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function DetailDialog({ request, initialMode, onClose, onAction, actionState }) {
   const dialogRef = useRef(null)
+  const [tab, setTab] = useState("detail")
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [replyOpen, setReplyOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteNotify, setDeleteNotify] = useState(false)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -241,186 +516,275 @@ function DetailDialog({ request, onClose, onAction, actionState, onReply }) {
   }, [request])
 
   useEffect(() => {
-    setConfirmCancel(false)
-    setReplyOpen(false)
-  }, [request?.id])
+    if (initialMode === "edit") setTab("edit")
+    else if (initialMode === "notes") setTab("notes")
+    else if (initialMode === "history") setTab("history")
+    else setTab("detail")
 
-  const handleClose = () => {
-    onClose()
+    setConfirmCancel(false)
+    setReplyOpen(initialMode === "reply")
+    setDeleteOpen(initialMode === "delete")
+    setDeleteNotify(false)
+  }, [request?.id, initialMode])
+
+  if (!request) {
+    return (
+      <dialog ref={dialogRef} className="admin-dialog" onClose={onClose} onCancel={onClose}>
+        <span />
+      </dialog>
+    )
   }
 
-  const handleCancel = () => {
-    onAction("cancel")
-    setConfirmCancel(false)
-  }
+  const status = request.status || "pending"
+  const replies = Array.isArray(request.replies) ? request.replies : []
+  const notes = Array.isArray(request.notes) ? request.notes : []
+  const history = Array.isArray(request.history) ? request.history : []
 
-  const status = request?.status || "pending"
+  const historyEntries = history.length
+    ? history
+    : [{ id: "created", type: "created", at: request.createdAt, by: "Sistema" }]
+
+  const tabs = [
+    { id: "detail", label: "Detalle" },
+    { id: "edit", label: "Editar" },
+    { id: "notes", label: `Notas (${notes.length})` },
+    { id: "history", label: `Historial (${historyEntries.length})` },
+  ]
 
   return (
     <dialog
       ref={dialogRef}
       className="admin-dialog"
-      onClose={handleClose}
+      onClose={onClose}
       onCancel={(event) => {
         event.preventDefault()
-        handleClose()
+        onClose()
       }}
       onClick={(event) => {
-        if (event.target === dialogRef.current) handleClose()
+        if (event.target === dialogRef.current) onClose()
       }}
       aria-labelledby="admin-detail-title"
     >
-      {request ? (
-        <div className="admin-dialog__panel">
-          <header className="admin-dialog__head">
-            <div>
-              <StatusBadge status={status} />
-              <h2 id="admin-detail-title">{request.name}</h2>
-              <p>{request.company}</p>
-            </div>
-            <button type="button" className="admin-dialog__close" onClick={handleClose} aria-label="Cerrar detalle">
-              <Icon name="x" size={18} />
+      <div className="admin-dialog__panel">
+        <header className="admin-dialog__head">
+          <div>
+            <StatusBadge status={status} />
+            <h2 id="admin-detail-title">{request.name}</h2>
+            <p>{request.company}</p>
+          </div>
+          <button type="button" className="admin-dialog__close" onClick={onClose} aria-label="Cerrar detalle">
+            <Icon name="x" size={18} />
+          </button>
+        </header>
+
+        <div className="admin-dialog__tabs" role="tablist" aria-label="Detalle de la solicitud">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === item.id}
+              className={tab === item.id ? "is-active" : ""}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
             </button>
-          </header>
+          ))}
+        </div>
 
-          <div className="admin-dialog__body">
-            <div className="admin-detail-grid">
-              <div>
-                <span>Fecha de reunión</span>
-                <strong>{formatDate(request.date)}</strong>
-              </div>
-              <div>
-                <span>Horario</span>
-                <strong>{formatTime(request.time)}</strong>
-              </div>
-              <div>
-                <span>Email</span>
-                <strong>
-                  <a href={`mailto:${request.email}`}>{request.email}</a>
-                </strong>
-              </div>
-              <div>
-                <span>Teléfono</span>
-                <strong>
-                  <a href={`tel:${request.phone}`}>{request.phone}</a>
-                </strong>
-              </div>
-              <div>
-                <span>Servicio</span>
-                <strong>{request.service}</strong>
-              </div>
-              <div>
-                <span>Presupuesto</span>
-                <strong>{request.budget || "A definir"}</strong>
-              </div>
-              <div>
-                <span>Urgencia</span>
-                <strong>{request.urgency || "A definir"}</strong>
-              </div>
-              <div>
-                <span>Solicitud recibida</span>
-                <strong>{formatTimestamp(request.createdAt)}</strong>
-              </div>
-            </div>
+        <div className="admin-dialog__body">
+          {actionState.error ? (
+            <p className="admin-form-error" role="alert">
+              {actionState.error}
+            </p>
+          ) : null}
+          {actionState.success ? (
+            <p className="admin-form-success" role="status">
+              {actionState.success}
+            </p>
+          ) : null}
 
-            <div className="admin-message">
-              <span>Mensaje del cliente</span>
-              <p>{request.message}</p>
-            </div>
-
-            {request.confirmedAt ? <p className="admin-history">Confirmada el {formatTimestamp(request.confirmedAt)}.</p> : null}
-            {request.cancelledAt ? <p className="admin-history">Cancelada el {formatTimestamp(request.cancelledAt)}.</p> : null}
-
-            {Array.isArray(request.replies) && request.replies.length ? (
-              <div className="admin-replies">
-                <h3>Respuestas enviadas</h3>
-                {request.replies.slice(-3).reverse().map((reply) => (
-                  <div key={reply.id}>
-                    <strong>{reply.subject}</strong>
-                    <span>{formatTimestamp(reply.sentAt)}</span>
-                    <p>{reply.message}</p>
-                  </div>
-                ))}
+          {tab === "detail" ? (
+            <>
+              <div className="admin-detail-contact">
+                <a href={`mailto:${request.email}`}>
+                  <Icon name="mail" size={15} />
+                  {request.email}
+                </a>
+                <a href={`tel:${request.phone}`}>
+                  <Icon name="phone" size={15} />
+                  {request.phone}
+                </a>
+                <a href={`https://wa.me/${String(request.phone || "").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
+                  <Icon name="whatsapp" size={15} />
+                  WhatsApp
+                </a>
+                <CopyButton value={request.email} label="email" />
+                <CopyButton value={request.phone} label="teléfono" />
               </div>
-            ) : null}
 
-            {actionState.error ? (
-              <p className="admin-form-error" role="alert">
-                {actionState.error}
-              </p>
-            ) : null}
-            {actionState.success ? (
-              <p className="admin-form-success" role="status">
-                {actionState.success}
-              </p>
-            ) : null}
-
-            {replyOpen ? (
-              <ReplyForm
-                request={request}
-                sending={actionState.loading}
-                onSend={(payload) => {
-                  onReply(payload)
-                }}
-              />
-            ) : null}
-
-            {confirmCancel ? (
-              <div className="admin-cancel-confirm" role="alert">
-                <p>¿Cancelar esta reunión? Se enviará un email al cliente.</p>
+              <div className="admin-detail-grid">
                 <div>
-                  <button
-                    type="button"
-                    className="admin-button admin-button--danger"
-                    onClick={handleCancel}
-                    disabled={actionState.loading}
-                  >
-                    Sí, cancelar
-                  </button>
-                  <button type="button" className="admin-button" onClick={() => setConfirmCancel(false)}>
-                    Volver
-                  </button>
+                  <span>Fecha de reunión</span>
+                  <strong>{formatDate(request.date)}</strong>
+                </div>
+                <div>
+                  <span>Horario</span>
+                  <strong>{formatTime(request.time)}</strong>
+                </div>
+                <div>
+                  <span>Servicio</span>
+                  <strong>{request.service}</strong>
+                </div>
+                <div>
+                  <span>Presupuesto</span>
+                  <strong>{request.budget || "A definir"}</strong>
+                </div>
+                <div>
+                  <span>Urgencia</span>
+                  <strong>{request.urgency || "A definir"}</strong>
+                </div>
+                <div>
+                  <span>Solicitud recibida</span>
+                  <strong>{formatTimestamp(request.createdAt)}</strong>
                 </div>
               </div>
-            ) : null}
-          </div>
 
-          <footer className="admin-dialog__actions">
-            {status !== "confirmed" ? (
-              <button
-                type="button"
-                className="btn btn--accent"
-                onClick={() => onAction("confirm")}
-                disabled={actionState.loading}
-              >
-                {actionState.loading ? "Procesando…" : status === "cancelled" ? "Volver a confirmar" : "Confirmar reunión"}
-                <Icon name="check" size={16} />
-              </button>
-            ) : null}
+              <div className="admin-message">
+                <span>Mensaje del cliente</span>
+                <p>{request.message}</p>
+              </div>
 
-            {status !== "cancelled" ? (
-              <button
-                type="button"
-                className="admin-button admin-button--danger"
-                onClick={() => setConfirmCancel(true)}
-                disabled={actionState.loading}
-              >
-                Cancelar
-              </button>
-            ) : null}
+              <div className="admin-detail-meta">
+                <span>
+                  <Icon name="mail" size={13} /> {replies.length} respuestas enviadas
+                </span>
+                <span>
+                  <Icon name="note" size={13} /> {notes.length} notas internas
+                </span>
+                {request.confirmedAt ? <span className="is-ok">Confirmada {formatTimestamp(request.confirmedAt)}</span> : null}
+                {request.cancelledAt ? <span className="is-danger">Cancelada {formatTimestamp(request.cancelledAt)}</span> : null}
+              </div>
 
+              {replies.length ? (
+                <div className="admin-replies">
+                  <h3>Últimas respuestas</h3>
+                  {replies.slice(-3).reverse().map((reply) => (
+                    <div key={reply.id}>
+                      <strong>{reply.subject}</strong>
+                      <span>{formatTimestamp(reply.sentAt)}</span>
+                      <p>{reply.message}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {replyOpen ? <ReplyForm request={request} sending={actionState.loading} onSend={(payload) => onAction("reply", payload)} /> : null}
+
+              {confirmCancel ? (
+                <div className="admin-cancel-confirm" role="alert">
+                  <p>¿Cancelar esta reunión? Se enviará un email al cliente.</p>
+                  <div>
+                    <button
+                      type="button"
+                      className="admin-button admin-button--danger"
+                      onClick={() => onAction("cancel")}
+                      disabled={actionState.loading}
+                    >
+                      Sí, cancelar
+                    </button>
+                    <button type="button" className="admin-button" onClick={() => setConfirmCancel(false)}>
+                      Volver
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {deleteOpen ? (
+                <div className="admin-delete-panel" role="alertdialog" aria-label="Eliminar solicitud">
+                  <h3>Eliminar solicitud</h3>
+                  <p>Esta acción borra la solicitud del panel y no se puede deshacer.</p>
+                  <label className="admin-checkbox">
+                    <input type="checkbox" checked={deleteNotify} onChange={(event) => setDeleteNotify(event.target.checked)} />
+                    <span>Avisar al cliente por email antes de eliminar</span>
+                  </label>
+                  <div className="admin-delete-panel__actions">
+                    <button
+                      type="button"
+                      className="admin-button admin-button--danger"
+                      onClick={() => onAction("delete", { notifyClient: deleteNotify })}
+                      disabled={actionState.loading}
+                    >
+                      {actionState.loading ? "Eliminando…" : "Eliminar definitivamente"}
+                      <Icon name="trash" size={15} />
+                    </button>
+                    <button type="button" className="admin-button" onClick={() => setDeleteOpen(false)}>
+                      Volver
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {tab === "edit" ? <EditForm request={request} saving={actionState.loading} onSave={(payload) => onAction("edit", payload)} /> : null}
+
+          {tab === "notes" ? <NotesPanel request={request} saving={actionState.loading} onAdd={(payload) => onAction("note", payload)} /> : null}
+
+          {tab === "history" ? <HistoryPanel request={request} /> : null}
+        </div>
+
+        <footer className="admin-dialog__actions">
+          {status !== "confirmed" ? (
             <button
               type="button"
-              className="admin-button"
-              onClick={() => setReplyOpen((value) => !value)}
+              className="btn btn--accent"
+              onClick={() => onAction("confirm")}
               disabled={actionState.loading}
             >
-              {replyOpen ? "Cerrar respuesta" : "Responder"}
-              <Icon name="mail" size={15} />
+              {actionState.loading ? "Procesando…" : status === "cancelled" ? "Volver a confirmar" : "Confirmar reunión"}
+              <Icon name="check" size={16} />
             </button>
-          </footer>
-        </div>
-      ) : null}
+          ) : null}
+
+          {status !== "cancelled" ? (
+            <button
+              type="button"
+              className="admin-button admin-button--danger"
+              onClick={() => setConfirmCancel(true)}
+              disabled={actionState.loading}
+            >
+              Cancelar reunión
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            className="admin-button"
+            onClick={() => setReplyOpen((value) => !value)}
+            disabled={actionState.loading}
+          >
+            {replyOpen ? "Cerrar respuesta" : "Responder"}
+            <Icon name="mail" size={15} />
+          </button>
+
+          <button type="button" className="admin-button" onClick={() => setTab("edit")} disabled={actionState.loading}>
+            Editar
+            <Icon name="pencil" size={15} />
+          </button>
+
+          <button
+            type="button"
+            className="admin-icon-button admin-icon-button--danger"
+            onClick={() => setDeleteOpen(true)}
+            disabled={actionState.loading}
+            aria-label="Eliminar solicitud"
+            title="Eliminar solicitud"
+          >
+            <Icon name="trash" size={16} />
+          </button>
+        </footer>
+      </div>
     </dialog>
   )
 }
@@ -431,8 +795,13 @@ export default function AdminPage() {
   const [listState, setListState] = useState({ loading: false, error: "" })
   const [filter, setFilter] = useState("all")
   const [query, setQuery] = useState("")
+  const [sortBy, setSortBy] = useState("newest")
+  const [page, setPage] = useState(1)
   const [selected, setSelected] = useState(null)
+  const [dialogMode, setDialogMode] = useState("detail")
   const [actionState, setActionState] = useState({ loading: false, error: "", success: "" })
+  const [notice, setNotice] = useState("")
+  const noticeTimer = useRef(0)
 
   useEffect(() => {
     document.title = "Panel — Mambo Market"
@@ -457,6 +826,20 @@ export default function AdminPage() {
       robots.remove()
     }
   }, [])
+
+  useEffect(() => {
+    return () => window.clearTimeout(noticeTimer.current)
+  }, [])
+
+  useEffect(() => {
+    setPage(1)
+  }, [filter, query, sortBy])
+
+  const showNotice = (message) => {
+    window.clearTimeout(noticeTimer.current)
+    setNotice(message)
+    noticeTimer.current = window.setTimeout(() => setNotice(""), 3200)
+  }
 
   const loadRequests = async () => {
     setListState({ loading: true, error: "" })
@@ -498,37 +881,42 @@ export default function AdminPage() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    return requests.filter((request) => {
+    const filteredList = requests.filter((request) => {
       if (filter !== "all" && (request.status || "pending") !== filter) return false
       if (!needle) return true
-      return [request.name, request.company, request.email, request.service]
+      return [request.name, request.company, request.email, request.service, request.phone]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(needle))
     })
-  }, [requests, filter, query])
 
-  const handleLogin = (email) => {
-    setAuth({ status: "authenticated", email })
-  }
+    return sortRequests(filteredList, sortBy)
+  }, [requests, filter, query, sortBy])
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, pageCount)
+  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const handleLogin = (email) => setAuth({ status: "authenticated", email })
 
   const handleLogout = async () => {
     try {
       await api("/api/admin/logout", { method: "POST" })
     } catch {
-      // The session is cleared locally even if the request fails.
+      // La sesión local se cierra igualmente.
     }
     setRequests([])
     setSelected(null)
     setAuth({ status: "guest", email: "" })
   }
 
-  const openDetail = (request) => {
+  const openDetail = (request, mode = "detail") => {
     setActionState({ loading: false, error: "", success: "" })
+    setDialogMode(mode)
     setSelected(request)
   }
 
   const runAction = async (action, extra = {}) => {
-    if (!selected || actionState.loading) return
+    if (!selected || actionState.loading) return null
     setActionState({ loading: true, error: "", success: "" })
 
     try {
@@ -536,6 +924,15 @@ export default function AdminPage() {
         method: "POST",
         body: JSON.stringify({ id: selected.id, action, ...extra }),
       })
+
+      if (action === "delete") {
+        setRequests((previous) => previous.filter((request) => request.id !== selected.id))
+        setSelected(null)
+        showNotice("Solicitud eliminada.")
+        setActionState({ loading: false, error: "", success: "" })
+        return null
+      }
+
       const updated = data.request
       setRequests((previous) => previous.map((request) => (request.id === updated.id ? updated : request)))
       setSelected(updated)
@@ -547,20 +944,34 @@ export default function AdminPage() {
             ? "Reunión confirmada. Le enviamos el email al cliente."
             : action === "cancel"
               ? "Reunión cancelada. Le enviamos el aviso al cliente."
-              : "Respuesta enviada al cliente.",
+              : action === "reply"
+                ? "Respuesta enviada al cliente."
+                : action === "edit"
+                  ? "Solicitud actualizada correctamente."
+                  : action === "note"
+                    ? "Nota interna guardada."
+                    : "Acción completada.",
       })
+      return updated
     } catch (error) {
       if (error.status === 401) {
         setAuth({ status: "guest", email: "" })
         setSelected(null)
-        return
+        return null
       }
       setActionState({ loading: false, error: error.message, success: "" })
+      return null
     }
   }
 
-  const handleReply = async (payload) => {
-    await runAction("reply", payload)
+  const handleFilter = (nextFilter) => {
+    setFilter(nextFilter)
+    setPage(1)
+  }
+
+  const handleExport = () => {
+    exportRequestsCsv(filtered)
+    showNotice("CSV exportado con las solicitudes filtradas.")
   }
 
   if (auth.status === "checking") {
@@ -621,35 +1032,41 @@ export default function AdminPage() {
             <p className="admin-eyebrow">Solicitudes de reunión</p>
             <h1>Panel de administración</h1>
           </div>
-          <button
-            type="button"
-            className="admin-button"
-            onClick={loadRequests}
-            disabled={listState.loading}
-            aria-label="Actualizar solicitudes"
-          >
-            <Icon name="refresh" size={16} />
-            {listState.loading ? "Actualizando…" : "Actualizar"}
-          </button>
+          <div className="admin-topbar__actions">
+            <button type="button" className="admin-button" onClick={handleExport} disabled={!filtered.length}>
+              <Icon name="download" size={16} />
+              Exportar CSV
+            </button>
+            <button
+              type="button"
+              className="admin-button"
+              onClick={loadRequests}
+              disabled={listState.loading}
+              aria-label="Actualizar solicitudes"
+            >
+              <Icon name="refresh" size={16} />
+              {listState.loading ? "Actualizando…" : "Actualizar"}
+            </button>
+          </div>
         </header>
 
         <section className="admin-stats" aria-label="Resumen de solicitudes">
-          <article>
+          <button type="button" className={filter === "pending" ? "is-active" : ""} onClick={() => handleFilter("pending")}>
             <span>Pendientes</span>
             <strong>{stats.pending}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" className={filter === "confirmed" ? "is-active" : ""} onClick={() => handleFilter("confirmed")}>
             <span>Confirmadas</span>
             <strong>{stats.confirmed}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" className={filter === "cancelled" ? "is-active" : ""} onClick={() => handleFilter("cancelled")}>
             <span>Canceladas</span>
             <strong>{stats.cancelled}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" className={filter === "all" ? "is-active" : ""} onClick={() => handleFilter("all")}>
             <span>Total</span>
             <strong>{stats.total}</strong>
-          </article>
+          </button>
         </section>
 
         <section className="admin-toolbar" aria-label="Filtros de solicitudes">
@@ -663,7 +1080,7 @@ export default function AdminPage() {
                   role="tab"
                   aria-selected={filter === item.id}
                   className={filter === item.id ? "is-active" : ""}
-                  onClick={() => setFilter(item.id)}
+                  onClick={() => handleFilter(item.id)}
                 >
                   {item.label}
                   <span>{count}</span>
@@ -672,16 +1089,29 @@ export default function AdminPage() {
             })}
           </div>
 
-          <label className="admin-search">
-            <Icon name="search" size={17} />
-            <span className="sr-only">Buscar solicitudes</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar por nombre, empresa o email"
-            />
-          </label>
+          <div className="admin-toolbar__filters">
+            <label className="admin-search">
+              <Icon name="search" size={17} />
+              <span className="sr-only">Buscar solicitudes</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar nombre, empresa, email…"
+              />
+            </label>
+
+            <label className="admin-select">
+              <span className="sr-only">Ordenar solicitudes</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                {SORT_OPTIONS.map((option) => (
+                  <option value={option.id} key={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </section>
 
         {listState.error ? (
@@ -712,50 +1142,130 @@ export default function AdminPage() {
         ) : null}
 
         {!listState.error && filtered.length ? (
-          <section className="admin-cards" aria-label="Solicitudes">
-            {filtered.map((request) => (
-              <article className="request-card" key={request.id}>
-                <div className="request-card__head">
-                  <StatusBadge status={request.status} />
-                  <span className="request-card__date">{formatDate(request.date, "short")}</span>
-                </div>
-                <div className="request-card__person">
-                  <span className="request-card__avatar" aria-hidden="true">
-                    {initials(request.name)}
-                  </span>
-                  <div>
-                    <h2>{request.name}</h2>
-                    <p>{request.company}</p>
+          <>
+            <section className="admin-cards" aria-label="Solicitudes">
+              {pageItems.map((request) => (
+                <article className="request-card" key={request.id}>
+                  <div className="request-card__head">
+                    <StatusBadge status={request.status} />
+                    <span className="request-card__date">{formatDate(request.date, "short")}</span>
                   </div>
-                </div>
-                <p className="request-card__service">{request.service}</p>
-                <div className="request-card__meta">
-                  <span>
-                    <Icon name="clock" size={14} />
-                    {formatTime(request.time)}
-                  </span>
-                  <span>{request.email}</span>
-                </div>
-                <div className="request-card__foot">
-                  <span>Recibida {formatTimestamp(request.createdAt)}</span>
-                  <button type="button" className="admin-button" onClick={() => openDetail(request)}>
-                    Ver detalle
-                    <Icon name="arrow-right" size={15} />
-                  </button>
-                </div>
-              </article>
-            ))}
-          </section>
+
+                  <div className="request-card__person">
+                    <span className="request-card__avatar" aria-hidden="true">
+                      {initials(request.name)}
+                    </span>
+                    <div>
+                      <h2>{request.name}</h2>
+                      <p>{request.company}</p>
+                    </div>
+                  </div>
+
+                  <p className="request-card__service">{request.service}</p>
+                  <p className="request-card__message">{request.message}</p>
+
+                  <div className="request-card__meta">
+                    <span>
+                      <Icon name="clock" size={13} />
+                      {formatTime(request.time)}
+                    </span>
+                    <span>
+                      <Icon name="mail" size={13} />
+                      {request.email}
+                    </span>
+                    <span>
+                      <Icon name="phone" size={13} />
+                      {request.phone}
+                    </span>
+                  </div>
+
+                  <div className="request-card__badges">
+                    {request.replies?.length ? <span>{request.replies.length} respuestas</span> : null}
+                    {request.notes?.length ? <span>{request.notes.length} notas</span> : null}
+                    {request.updatedAt && request.updatedAt !== request.createdAt ? <span>Actualizada</span> : null}
+                  </div>
+
+                  <div className="request-card__actions">
+                    <a className="admin-icon-button" href={`mailto:${request.email}`} aria-label={`Enviar email a ${request.name}`} title="Enviar email">
+                      <Icon name="mail" size={15} />
+                    </a>
+                    <a
+                      className="admin-icon-button"
+                      href={`https://wa.me/${String(request.phone || "").replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Abrir WhatsApp de ${request.name}`}
+                      title="Abrir WhatsApp"
+                    >
+                      <Icon name="whatsapp" size={15} />
+                    </a>
+                    <button
+                      type="button"
+                      className="admin-icon-button"
+                      onClick={() => openDetail(request, "edit")}
+                      aria-label={`Editar solicitud de ${request.name}`}
+                      title="Editar"
+                    >
+                      <Icon name="pencil" size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-icon-button admin-icon-button--danger"
+                      onClick={() => openDetail(request, "delete")}
+                      aria-label={`Eliminar solicitud de ${request.name}`}
+                      title="Eliminar"
+                    >
+                      <Icon name="trash" size={15} />
+                    </button>
+                    <span className="request-card__spacer" />
+                    <button type="button" className="admin-button" onClick={() => openDetail(request)}>
+                      Ver detalle
+                      <Icon name="arrow-right" size={15} />
+                    </button>
+                  </div>
+
+                  <div className="request-card__foot">
+                    <span>Recibida {formatTimestamp(request.createdAt)}</span>
+                  </div>
+                </article>
+              ))}
+            </section>
+
+            {pageCount > 1 ? (
+              <nav className="admin-pagination" aria-label="Paginación">
+                <button type="button" className="admin-button" onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>
+                  Anterior
+                </button>
+                <span>
+                  Página {currentPage} de {pageCount} · {filtered.length} solicitudes
+                </span>
+                <button
+                  type="button"
+                  className="admin-button"
+                  onClick={() => setPage(Math.min(pageCount, currentPage + 1))}
+                  disabled={currentPage === pageCount}
+                >
+                  Siguiente
+                </button>
+              </nav>
+            ) : null}
+          </>
         ) : null}
       </main>
 
       <DetailDialog
         request={selected}
+        initialMode={dialogMode}
         onClose={() => setSelected(null)}
         onAction={runAction}
-        onReply={handleReply}
         actionState={actionState}
       />
+
+      {notice ? (
+        <div className="admin-toast" role="status">
+          {notice}
+        </div>
+      ) : null}
     </div>
   )
 }

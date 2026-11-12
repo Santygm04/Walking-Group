@@ -47,6 +47,46 @@ const ICONS = {
       </>
     ),
   },
+  pencil: {
+    paths: (
+      <>
+        <path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+        <path d="m13.5 6.5 4 4" />
+      </>
+    ),
+  },
+  trash: {
+    paths: (
+      <>
+        <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+        <path d="M10 11v5M14 11v5" />
+      </>
+    ),
+  },
+  copy: {
+    paths: (
+      <>
+        <rect x="9" y="9" width="11" height="11" rx="2" />
+        <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+      </>
+    ),
+  },
+  download: {
+    paths: (
+      <>
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+        <path d="M4 19h16" />
+      </>
+    ),
+  },
+  note: {
+    paths: (
+      <>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+        <path d="M14 2v6h6M8 13h8M8 17h5" />
+      </>
+    ),
+  },
   "map-pin": {
     paths: (
       <>

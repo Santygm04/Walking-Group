@@ -91,3 +91,12 @@ export async function updateRequest(id, updater) {
   await saveRequest(record)
   return record
 }
+
+export async function deleteRequest(id) {
+  if (!storageConfigured()) {
+    return memoryStore.delete(id)
+  }
+
+  const removed = await redisCommand(["HDEL", REQUESTS_KEY, id])
+  return removed > 0
+}
