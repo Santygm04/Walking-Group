@@ -7,7 +7,6 @@ import {
   CONTACT_PHONE_HREF,
   OFFICES,
   SERVICE_OPTIONS,
-  TIME_OPTIONS,
   URGENCY_OPTIONS,
   WHATSAPP_NUMBER,
 } from "../../data/siteData"
@@ -71,29 +70,41 @@ export default function Contact({ selectedService, selectionToken }) {
     setForm((previous) => ({ ...previous, [name]: value }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(form))}`
-    const opened = window.open(url, "_blank")
+    if (status.type === "sending") return
 
-    if (opened) {
-      opened.opener = null
+    setStatus({ type: "sending", message: "", fallback: "" })
+
+    try {
+      const response = await fetch("/api/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(data.message || "No pudimos enviar tu solicitud.")
+      }
+
       setStatus({
         type: "success",
-        message: "Abrimos WhatsApp en una pestaña nueva con el resumen de tu consulta.",
+        message: `Solicitud enviada. Te enviamos un email a ${form.email} con los datos. La reunión queda pendiente hasta que el equipo la confirme.`,
         fallback: "",
       })
-      return
+    } catch (error) {
+      const fallback = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildMessage(form))}`
+      setStatus({
+        type: "error",
+        message: `${error.message} También podés escribirnos por WhatsApp mientras tanto.`,
+        fallback,
+      })
     }
-
-    setStatus({
-      type: "error",
-      message: "No pudimos abrir WhatsApp automáticamente.",
-      fallback: url,
-    })
   }
 
   const minDate = new Date().toISOString().split("T")[0]
+  const isSending = status.type === "sending"
 
   return (
     <section id="contacto" className="section contact">
@@ -218,7 +229,7 @@ export default function Contact({ selectedService, selectionToken }) {
 
                 <div className="field">
                   <label htmlFor="email">
-                    Email corporativo <span aria-hidden="true">*</span>
+                    Gmail o email de contacto <span aria-hidden="true">*</span>
                   </label>
                   <input
                     type="email"
@@ -227,7 +238,7 @@ export default function Contact({ selectedService, selectionToken }) {
                     value={form.email}
                     onChange={handleChange}
                     autoComplete="email"
-                    placeholder="nombre@empresa.com"
+                    placeholder="tucuenta@gmail.com"
                     required
                   />
                 </div>
@@ -317,11 +328,13 @@ export default function Contact({ selectedService, selectionToken }) {
 
               <fieldset className="form-section">
                 <legend>
-                  <span>03</span> Reunión <em>opcional</em>
+                  <span>03</span> Reunión
                 </legend>
                 <div className="form-grid">
                 <div className="field">
-                  <label htmlFor="fechaPreferida">Fecha preferida</label>
+                  <label htmlFor="fechaPreferida">
+                    Fecha de la reunión <span aria-hidden="true">*</span>
+                  </label>
                   <input
                     type="date"
                     id="fechaPreferida"
@@ -329,33 +342,36 @@ export default function Contact({ selectedService, selectionToken }) {
                     value={form.fechaPreferida}
                     onChange={handleChange}
                     min={minDate}
+                    required
                   />
                 </div>
 
                 <div className="field">
-                  <label htmlFor="horaPreferida">Hora preferida</label>
-                  <select id="horaPreferida" name="horaPreferida" value={form.horaPreferida} onChange={handleChange}>
-                    <option value="">Seleccionar hora…</option>
-                    {TIME_OPTIONS.map((option) => (
-                      <option value={option} key={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="horaPreferida">
+                    Horario preferido <span aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    id="horaPreferida"
+                    name="horaPreferida"
+                    value={form.horaPreferida}
+                    onChange={handleChange}
+                    required
+                  />
+                  <small className="field__hint">Elegí el horario que te quede mejor. Te lo confirmamos por email.</small>
                 </div>
 
                 </div>
               </fieldset>
 
-              <button type="submit" className="btn btn--full contact-form__submit">
-                Enviar consulta por WhatsApp
-                <span className="btn__icon">
-                  <Icon name="whatsapp" size={18} />
-                </span>
+              <button type="submit" className="btn btn--full contact-form__submit" disabled={isSending}>
+                {isSending ? "Enviando solicitud…" : "Solicitar reunión"}
+                <Icon name={isSending ? "clock" : "mail"} size={18} />
               </button>
 
               <p className="contact-form__note">
-                Se abre WhatsApp con el resumen de tu consulta. No almacenamos datos en este sitio.
+                Al enviar, te llega un email de recepción y el equipo recibe los detalles. La confirmación final llega
+                por email.
               </p>
 
               <div className={`contact-form__status contact-form__status--${status.type}`} aria-live="polite" role="status">
@@ -366,7 +382,7 @@ export default function Contact({ selectedService, selectionToken }) {
                       {status.message}{" "}
                       {status.fallback ? (
                         <a href={status.fallback} target="_blank" rel="noopener noreferrer">
-                          Abrir WhatsApp manualmente
+                          Escribir por WhatsApp
                         </a>
                       ) : null}
                     </span>

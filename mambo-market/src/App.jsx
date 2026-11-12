@@ -9,9 +9,10 @@ import Methodology from "./sections/Methodology/Methodology"
 import Clients from "./sections/Clients/Clients"
 import Contact from "./sections/Contact/Contact"
 import SiteFooter from "./sections/SiteFooter/SiteFooter"
+import ConfirmationPage from "./pages/ConfirmationPage"
 import { useMagnetic, usePrefersReducedMotion, useRevealOnScroll } from "./hooks/useUI"
 
-export default function App() {
+function LandingPage() {
   const reduced = usePrefersReducedMotion()
   useRevealOnScroll(reduced)
   useMagnetic(reduced)
@@ -48,4 +49,14 @@ export default function App() {
       <SiteFooter />
     </div>
   )
+}
+
+export default function App() {
+  const token = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("confirmar") : ""
+
+  if (token) {
+    return <ConfirmationPage token={token} />
+  }
+
+  return <LandingPage />
 }
