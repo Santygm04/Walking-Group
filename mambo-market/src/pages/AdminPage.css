@@ -1640,3 +1640,19 @@
   min-height: 0;
   overflow-y: auto;
 }
+.admin-otp-input {
+  padding-block: 12px;
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: 0.45em;
+  text-align: center;
+}
+
+.admin-login__form .admin-button {
+  align-self: flex-start;
+}
+
+.admin-login__lead strong {
+  color: var(--navy);
+}

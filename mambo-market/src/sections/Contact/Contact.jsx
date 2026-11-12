@@ -417,7 +417,7 @@ export default function Contact({ selectedService, selectionToken }) {
 
                 <div className="field">
                   <label htmlFor="horaPreferida">
-                    Horario preferido <span aria-hidden="true">*</span>
+                    Horario preferido (Argentina) <span aria-hidden="true">*</span>
                   </label>
                   <input
                     type="time"
@@ -427,7 +427,9 @@ export default function Contact({ selectedService, selectionToken }) {
                     onChange={handleChange}
                     required
                   />
-                  <small className="field__hint">Elegí el horario que te quede mejor. Te lo confirmamos por email.</small>
+                  <small className="field__hint">
+                    Hora de Argentina (GMT-3). Elegí el horario que te quede mejor; te lo confirmamos por email.
+                  </small>
                 </div>
 
                 </div>

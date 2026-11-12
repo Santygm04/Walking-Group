@@ -53,7 +53,7 @@ function MeetingDetails({ meeting }) {
         <dd>{formatDate(meeting.date)}</dd>
       </div>
       <div>
-        <dt>Horario</dt>
+        <dt>Horario (Argentina)</dt>
         <dd>{formatTime(meeting.time)}</dd>
       </div>
       <div>

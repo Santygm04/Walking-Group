@@ -3,6 +3,7 @@ import { requireAdmin } from "../_auth.js"
 import {
   buildCancelledEmail,
   buildConfirmedEmail,
+  buildReminderEmail,
   buildReplyEmail,
   buildUpdatedEmail,
   createTransport,
@@ -173,6 +174,34 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, request: updated })
     }
 
+    if (action === "remind") {
+      if (record.status !== "confirmed") {
+        return res.status(409).json({
+          error: "NOT_CONFIRMED",
+          message: "Confirmá la reunión antes de enviar un recordatorio.",
+        })
+      }
+
+      const email = buildReminderEmail(record)
+      const transport = createTransport()
+      await transport.sendMail({
+        from: getFromAddress(),
+        to: record.email,
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
+      })
+
+      const updated = await updateRequest(id, (current) => ({
+        ...current,
+        reminderSentAt: Date.now(),
+        updatedAt: Date.now(),
+        history: addHistory(current, "reminder", "Recordatorio manual enviado."),
+      }))
+
+      return res.status(200).json({ ok: true, request: updated })
+    }
+
     if (action === "note") {
       const text = sanitizeMultiline(body.text, 2000)
       if (!text) {
@@ -244,16 +273,21 @@ export default async function handler(req, res) {
         })
       }
 
-      const updated = await updateRequest(id, (current) => ({
-        ...current,
-        ...fields,
-        updatedAt: Date.now(),
-        history: addHistory(
-          current,
-          "edited",
-          changed.length ? `Campos actualizados: ${changed.join(", ")}` : "Sin cambios en los datos.",
-        ),
-      }))
+      const updated = await updateRequest(id, (current) => {
+        const scheduleChanged = current.date !== fields.date || current.time !== fields.time
+
+        return {
+          ...current,
+          ...fields,
+          reminderSentAt: scheduleChanged ? null : current.reminderSentAt,
+          updatedAt: Date.now(),
+          history: addHistory(
+            current,
+            "edited",
+            changed.length ? `Campos actualizados: ${changed.join(", ")}` : "Sin cambios en los datos.",
+          ),
+        }
+      })
 
       return res.status(200).json({ ok: true, request: updated })
     }

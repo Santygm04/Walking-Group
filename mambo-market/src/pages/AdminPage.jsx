@@ -30,6 +30,7 @@ const HISTORY_LABELS = {
   replied: "Respuesta enviada",
   edited: "Solicitud editada",
   note: "Nota interna",
+  reminder: "Recordatorio enviado",
 }
 
 const PAGE_SIZE = 9
@@ -188,9 +189,12 @@ function CopyButton({ value, label }) {
 }
 
 function LoginView({ onLogin }) {
+  const [step, setStep] = useState("credentials")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [challengeId, setChallengeId] = useState("")
+  const [code, setCode] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -201,16 +205,41 @@ function LoginView({ onLogin }) {
     setLoading(true)
 
     try {
+      if (step === "otp") {
+        const data = await api("/api/admin/verify", {
+          method: "POST",
+          body: JSON.stringify({ challengeId, code }),
+        })
+        onLogin(data.email)
+        return
+      }
+
       const data = await api("/api/admin/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       })
+
+      if (data.otpRequired) {
+        setChallengeId(data.challengeId)
+        setPassword("")
+        setCode("")
+        setStep("otp")
+        return
+      }
+
       onLogin(data.email)
     } catch (loginError) {
       setError(loginError.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleBack = () => {
+    setStep("credentials")
+    setChallengeId("")
+    setCode("")
+    setError("")
   }
 
   return (
@@ -228,59 +257,109 @@ function LoginView({ onLogin }) {
           </span>
         </div>
 
-        <h1>Ingresá al panel</h1>
-        <p className="admin-login__lead">Acceso restringido al equipo de Mambo Market.</p>
+        {step === "credentials" ? (
+          <>
+            <h1>Ingresá al panel</h1>
+            <p className="admin-login__lead">Acceso restringido al equipo de Mambo Market.</p>
 
-        <form className="admin-login__form" onSubmit={handleSubmit}>
-          <div className="admin-field">
-            <label htmlFor="admin-email">Gmail</label>
-            <input
-              id="admin-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="username"
-              placeholder="tu@gmail.com"
-              required
-            />
-          </div>
+            <form className="admin-login__form" onSubmit={handleSubmit}>
+              <div className="admin-field">
+                <label htmlFor="admin-email">Gmail</label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="username"
+                  placeholder="tu@gmail.com"
+                  required
+                />
+              </div>
 
-          <div className="admin-field">
-            <label htmlFor="admin-password">Contraseña</label>
-            <div className="admin-password">
-              <input
-                id="admin-password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                placeholder="Tu contraseña"
-                required
-              />
-              <button
-                type="button"
-                className="admin-password__toggle"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-              >
-                <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+              <div className="admin-field">
+                <label htmlFor="admin-password">Contraseña</label>
+                <div className="admin-password">
+                  <input
+                    id="admin-password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                    placeholder="Tu contraseña"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="admin-password__toggle"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  >
+                    <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {error ? (
+                <p className="admin-form-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              <button type="submit" className="btn btn--accent btn--full" disabled={loading}>
+                {loading ? "Verificando…" : "Ingresar"}
+                <Icon name="arrow-right" size={17} />
               </button>
-            </div>
-          </div>
-
-          {error ? (
-            <p className="admin-form-error" role="alert">
-              {error}
+            </form>
+          </>
+        ) : (
+          <>
+            <h1>Verificá tu identidad</h1>
+            <p className="admin-login__lead">
+              Enviamos un código de 6 dígitos a <strong>{email}</strong>. Vence en 10 minutos.
             </p>
-          ) : null}
 
-          <button type="submit" className="btn btn--accent btn--full" disabled={loading}>
-            {loading ? "Ingresando…" : "Ingresar"}
-            <Icon name="arrow-right" size={17} />
-          </button>
-        </form>
+            <form className="admin-login__form" onSubmit={handleSubmit}>
+              <div className="admin-field">
+                <label htmlFor="admin-code">Código de seguridad</label>
+                <input
+                  id="admin-code"
+                  className="admin-otp-input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={code}
+                  onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  autoFocus
+                  required
+                />
+              </div>
 
-        <p className="admin-login__note">Sesión segura de 8 horas. No compartas tu contraseña.</p>
+              {error ? (
+                <p className="admin-form-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              <button type="submit" className="btn btn--accent btn--full" disabled={loading || code.length !== 6}>
+                {loading ? "Verificando…" : "Verificar código"}
+                <Icon name="check" size={17} />
+              </button>
+
+              <button type="button" className="admin-button" onClick={handleBack} disabled={loading}>
+                Volver e ingresar de nuevo
+              </button>
+            </form>
+          </>
+        )}
+
+        <p className="admin-login__note">
+          {step === "otp"
+            ? "Si no recibís el código, revisá Spam o volvé para solicitar uno nuevo."
+            : "Sesión segura de 8 horas. El acceso se confirma con un código enviado a tu Gmail."}
+        </p>
         <a className="admin-login__back" href="/">
           Volver al sitio
         </a>
@@ -413,9 +492,9 @@ function EditForm({ request, onSave, saving }) {
           <input id={`edit-date-${request.id}`} name="date" type="date" value={fields.date} onChange={handleChange} required />
         </div>
         <div className="admin-field">
-          <label htmlFor={`edit-time-${request.id}`}>Horario</label>
-          <input id={`edit-time-${request.id}`} name="time" type="time" value={fields.time} onChange={handleChange} required />
-          <small className="admin-field__hint">Elegí cualquier horario.</small>
+                      <label htmlFor={`edit-time-${request.id}`}>Horario (Argentina)</label>
+                      <input id={`edit-time-${request.id}`} name="time" type="time" value={fields.time} onChange={handleChange} required />
+                      <small className="admin-field__hint">Hora de Argentina (GMT-3).</small>
         </div>
         <div className="admin-field">
           <label htmlFor={`edit-urgency-${request.id}`}>Urgencia</label>
@@ -661,7 +740,7 @@ function DetailDialog({ request, initialMode, onClose, onAction, actionState }) 
                   <strong>{formatDate(request.date)}</strong>
                 </div>
                 <div>
-                  <span>Horario</span>
+                  <span>Horario (Argentina)</span>
                   <strong>{formatTime(request.time)}</strong>
                 </div>
                 <div>
@@ -696,6 +775,7 @@ function DetailDialog({ request, initialMode, onClose, onAction, actionState }) 
                 </span>
                 {request.confirmedAt ? <span className="is-ok">Confirmada {formatTimestamp(request.confirmedAt)}</span> : null}
                 {request.cancelledAt ? <span className="is-danger">Cancelada {formatTimestamp(request.cancelledAt)}</span> : null}
+                {request.reminderSentAt ? <span>Recordatorio {formatTimestamp(request.reminderSentAt)}</span> : null}
               </div>
 
               {replies.length ? (
@@ -799,6 +879,18 @@ function DetailDialog({ request, initialMode, onClose, onAction, actionState }) 
             {replyOpen ? "Cerrar respuesta" : "Responder"}
             <Icon name="mail" size={15} />
           </button>
+
+          {status === "confirmed" ? (
+            <button
+              type="button"
+              className="admin-button"
+              onClick={() => onAction("remind")}
+              disabled={actionState.loading}
+            >
+              Recordatorio
+              <Icon name="bell" size={15} />
+            </button>
+          ) : null}
 
           <button type="button" className="admin-button" onClick={() => setTab("edit")} disabled={actionState.loading}>
             Editar
@@ -982,7 +1074,9 @@ export default function AdminPage() {
                   ? "Solicitud actualizada correctamente."
                   : action === "note"
                     ? "Nota interna guardada."
-                    : "Acción completada.",
+                    : action === "remind"
+                      ? "Recordatorio enviado al cliente."
+                      : "Acción completada.",
       })
       return updated
     } catch (error) {
@@ -1199,7 +1293,7 @@ export default function AdminPage() {
                   <div className="request-card__meta">
                     <span>
                       <Icon name="clock" size={13} />
-                      {formatTime(request.time)}
+                      {formatTime(request.time)} · ARG
                     </span>
                     <span>
                       <Icon name="mail" size={13} />
@@ -1214,6 +1308,7 @@ export default function AdminPage() {
                   <div className="request-card__badges">
                     {request.replies?.length ? <span>{request.replies.length} respuestas</span> : null}
                     {request.notes?.length ? <span>{request.notes.length} notas</span> : null}
+                    {request.reminderSentAt ? <span>Recordatorio</span> : null}
                     {request.updatedAt && request.updatedAt !== request.createdAt ? <span>Actualizada</span> : null}
                   </div>
 

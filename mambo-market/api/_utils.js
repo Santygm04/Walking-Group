@@ -178,7 +178,7 @@ export function buildAdminEmail(form, confirmUrl) {
     ["Teléfono", form.telefono],
     ["Servicio", form.tipoServicio],
     ["Fecha", formatDateLong(form.fechaPreferida)],
-    ["Horario", formatTime(form.horaPreferida)],
+    ["Horario (Argentina)", formatTime(form.horaPreferida)],
     ["Presupuesto", form.presupuesto || "A definir"],
     ["Urgencia", form.urgencia || "A definir"],
     ["Mensaje", form.mensaje],
@@ -211,7 +211,7 @@ export function buildAdminEmail(form, confirmUrl) {
     `Teléfono: ${form.telefono}`,
     `Servicio: ${form.tipoServicio}`,
     `Fecha: ${formatDateLong(form.fechaPreferida)}`,
-    `Horario: ${formatTime(form.horaPreferida)}`,
+    `Horario (Argentina): ${formatTime(form.horaPreferida)}`,
     `Presupuesto: ${form.presupuesto || "A definir"}`,
     `Urgencia: ${form.urgencia || "A definir"}`,
     "",
@@ -232,7 +232,7 @@ export function buildAdminEmail(form, confirmUrl) {
 export function buildPendingEmail(form) {
   const rows = [
     ["Fecha", formatDateLong(form.fechaPreferida)],
-    ["Horario", formatTime(form.horaPreferida)],
+    ["Horario (Argentina)", formatTime(form.horaPreferida)],
     ["Servicio", form.tipoServicio],
   ]
 
@@ -261,7 +261,7 @@ export function buildPendingEmail(form) {
     "",
     "Recibimos tu solicitud de reunión con Mambo Market.",
     `Fecha: ${formatDateLong(form.fechaPreferida)}`,
-    `Horario: ${formatTime(form.horaPreferida)}`,
+    `Horario (Argentina): ${formatTime(form.horaPreferida)}`,
     `Servicio: ${form.tipoServicio}`,
     "",
     "Estado: PENDIENTE DE CONFIRMACIÓN.",
@@ -280,7 +280,7 @@ export function buildPendingEmail(form) {
 export function buildConfirmedEmail(meeting) {
   const rows = [
     ["Fecha", formatDateLong(meeting.fecha)],
-    ["Horario", formatTime(meeting.hora)],
+    ["Horario (Argentina)", formatTime(meeting.hora)],
     ["Servicio", meeting.servicio],
   ]
 
@@ -308,7 +308,7 @@ export function buildConfirmedEmail(meeting) {
     "",
     "Tu reunión con Mambo Market quedó confirmada.",
     `Fecha: ${formatDateLong(meeting.fecha)}`,
-    `Horario: ${formatTime(meeting.hora)}`,
+    `Horario (Argentina): ${formatTime(meeting.hora)}`,
     `Servicio: ${meeting.servicio}`,
     "",
     "Estado: CONFIRMADA.",
@@ -342,7 +342,7 @@ export function sanitizeMultiline(value, maxLength = 4000) {
 export function buildCancelledEmail(record, reason = "") {
   const rows = [
     ["Fecha", formatDateLong(record.date)],
-    ["Horario", formatTime(record.time)],
+    ["Horario (Argentina)", formatTime(record.time)],
     ["Servicio", record.service],
   ]
 
@@ -374,7 +374,7 @@ export function buildCancelledEmail(record, reason = "") {
     "",
     "La reunión con Mambo Market fue cancelada.",
     `Fecha: ${formatDateLong(record.date)}`,
-    `Horario: ${formatTime(record.time)}`,
+    `Horario (Argentina): ${formatTime(record.time)}`,
     `Servicio: ${record.service}`,
     safeReason ? `\nMotivo: ${safeReason}` : "",
     "",
@@ -396,7 +396,7 @@ export function buildReplyEmail(record, subject, message) {
   const htmlMessage = escapeHtml(safeMessage).replace(/\n/g, "<br />")
   const rows = [
     ["Fecha de la reunión", formatDateLong(record.date)],
-    ["Horario", formatTime(record.time)],
+    ["Horario (Argentina)", formatTime(record.time)],
     ["Servicio", record.service],
   ]
 
@@ -425,7 +425,7 @@ export function buildReplyEmail(record, subject, message) {
       safeMessage,
       "",
       `Fecha de la reunión: ${formatDateLong(record.date)}`,
-      `Horario: ${formatTime(record.time)}`,
+      `Horario (Argentina): ${formatTime(record.time)}`,
       `Servicio: ${record.service}`,
       "",
       `Respondé este email o escribinos a ${getContactEmail()}.`,
@@ -437,7 +437,7 @@ export function buildUpdatedEmail(record) {
   const confirmed = record.status === "confirmed"
   const rows = [
     ["Fecha", formatDateLong(record.date)],
-    ["Horario", formatTime(record.time)],
+    ["Horario (Argentina)", formatTime(record.time)],
     ["Servicio", record.service],
     ["Estado", confirmed ? "Confirmada" : "Pendiente de confirmación"],
   ]
@@ -466,11 +466,99 @@ export function buildUpdatedEmail(record) {
       "",
       "Actualizamos los datos de tu solicitud de reunión con Mambo Market.",
       `Fecha: ${formatDateLong(record.date)}`,
-      `Horario: ${formatTime(record.time)}`,
+      `Horario (Argentina): ${formatTime(record.time)}`,
       `Servicio: ${record.service}`,
       `Estado: ${confirmed ? "Confirmada" : "Pendiente de confirmación"}`,
       "",
       `Si necesitás cambiar algo, respondé este email o escribinos a ${getContactEmail()}.`,
+    ].join("\n"),
+  }
+}
+
+export function buildOtpEmail(code) {
+  const html = emailShell({
+    title: "Código de acceso",
+    preheader: "Tu código de acceso al panel de Mambo Market.",
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Acceso al panel</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Tu código de seguridad</h1>
+      <p style="margin:12px 0 18px;font-size:14px;line-height:1.6;color:#5d6670;">
+        Usá este código para completar el ingreso al panel de administración de Mambo Market.
+      </p>
+      <p style="margin:0;padding:18px;border-radius:10px;background:#0e1a26;color:#ffffff;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:8px;text-align:center;">
+        ${escapeHtml(code)}
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+        El código vence en 10 minutos y solo se puede usar una vez. Si no fuiste vos, cambiá la contraseña del panel.
+      </p>
+    `,
+  })
+
+  return {
+    subject: "Código de acceso — Panel Mambo Market",
+    html,
+    text: [
+      "CÓDIGO DE ACCESO — PANEL MAMBO MARKET",
+      "",
+      `Código: ${code}`,
+      "",
+      "Vence en 10 minutos y solo se puede usar una vez.",
+      "Si no fuiste vos, cambiá la contraseña del panel.",
+    ].join("\n"),
+  }
+}
+
+export function meetingTimestampART(date, time) {
+  if (!date || !time) return null
+  const [year, month, day] = String(date).split("-").map(Number)
+  const [hours, minutes] = String(time).split(":").map(Number)
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes)
+  ) {
+    return null
+  }
+  return Date.UTC(year, month - 1, day, hours + 3, minutes, 0, 0)
+}
+
+export function buildReminderEmail(record) {
+  const rows = [
+    ["Fecha", formatDateLong(record.date)],
+    ["Horario (Argentina)", formatTime(record.time)],
+    ["Servicio", record.service],
+  ]
+
+  const html = emailShell({
+    title: "Recordatorio de reunión",
+    preheader: `Tu reunión con Mambo Market es el ${formatDateLong(record.date)}.`,
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Recordatorio</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Hola, ${escapeHtml(record.name)}</h1>
+      <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:#5d6670;">
+        Te recordamos que tenés una reunión confirmada con Mambo Market.
+      </p>
+      ${detailsTable(rows)}
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+        Si necesitás reprogramar, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
+      </p>
+    `,
+  })
+
+  return {
+    subject: "Recordatorio: tu reunión con Mambo Market",
+    html,
+    text: [
+      `Hola, ${record.name}:`,
+      "",
+      "Te recordamos que tenés una reunión confirmada con Mambo Market.",
+      `Fecha: ${formatDateLong(record.date)}`,
+      `Horario (Argentina): ${formatTime(record.time)}`,
+      `Servicio: ${record.service}`,
+      "",
+      `Si necesitás reprogramar, respondé este email o escribinos a ${getContactEmail()}.`,
     ].join("\n"),
   }
 }
