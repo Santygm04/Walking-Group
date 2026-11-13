@@ -926,6 +926,7 @@ export default function AdminPage() {
   const [selected, setSelected] = useState(null)
   const [dialogMode, setDialogMode] = useState("detail")
   const [actionState, setActionState] = useState({ loading: false, error: "", success: "" })
+  const [health, setHealth] = useState(null)
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef(0)
 
@@ -987,6 +988,21 @@ export default function AdminPage() {
   }, [auth.status])
 
   useEffect(() => {
+    if (auth.status !== "authenticated") return undefined
+    let active = true
+
+    api("/api/admin/health")
+      .then((data) => {
+        if (active) setHealth(data.services)
+      })
+      .catch(() => {})
+
+    return () => {
+      active = false
+    }
+  }, [auth.status])
+
+  useEffect(() => {
     if (!selected) return
     const updated = requests.find((request) => request.id === selected.id)
     if (updated && updated !== selected) setSelected(updated)
@@ -1004,6 +1020,59 @@ export default function AdminPage() {
       { total: 0, pending: 0, confirmed: 0, cancelled: 0 },
     )
   }, [requests])
+
+  const metrics = useMemo(() => {
+    const now = new Date()
+    const months = []
+
+    for (let index = 5; index >= 0; index -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - index, 1)
+      months.push({
+        key: `${date.getFullYear()}-${date.getMonth()}`,
+        label: date.toLocaleDateString("es-AR", { month: "short" }).replace(".", ""),
+        title: date.toLocaleDateString("es-AR", { month: "long", year: "numeric" }),
+        count: 0,
+      })
+    }
+
+    requests.forEach((request) => {
+      if (!request.createdAt) return
+      const date = new Date(request.createdAt)
+      const bucket = months.find((month) => month.key === `${date.getFullYear()}-${date.getMonth()}`)
+      if (bucket) bucket.count += 1
+    })
+
+    const maxMonth = Math.max(1, ...months.map((month) => month.count))
+
+    const serviceCounts = Object.entries(
+      requests.reduce((counts, request) => {
+        const service = request.service || "Sin servicio"
+        counts[service] = (counts[service] || 0) + 1
+        return counts
+      }, {}),
+    )
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, 4)
+
+    const maxService = Math.max(1, ...serviceCounts.map(([, count]) => count))
+    const durations = requests
+      .filter((request) => request.createdAt && request.confirmedAt)
+      .map((request) => request.confirmedAt - request.createdAt)
+      .filter((duration) => duration > 0)
+    const averageMs = durations.length
+      ? durations.reduce((total, duration) => total + duration, 0) / durations.length
+      : 0
+    const averageConfirmation =
+      averageMs > 0
+        ? averageMs < 24 * 60 * 60 * 1000
+          ? `${Math.round(averageMs / (60 * 60 * 1000))} h`
+          : `${(averageMs / (24 * 60 * 60 * 1000)).toFixed(1)} días`
+        : "—"
+    const newLast7 = requests.filter((request) => request.createdAt > Date.now() - 7 * 24 * 60 * 60 * 1000).length
+    const confirmationRate = requests.length ? Math.round(((stats.confirmed || 0) / requests.length) * 100) : 0
+
+    return { months, maxMonth, serviceCounts, maxService, averageConfirmation, newLast7, confirmationRate }
+  }, [requests, stats.confirmed])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -1102,6 +1171,28 @@ export default function AdminPage() {
     showNotice("CSV exportado con las solicitudes filtradas.")
   }
 
+  const handleBackup = async () => {
+    try {
+      const data = await api("/api/admin/backup")
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `mambo-backup-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+      showNotice(`Backup generado con ${data.count} solicitudes.`)
+    } catch (error) {
+      if (error.status === 401) {
+        setAuth({ status: "guest", email: "" })
+        return
+      }
+      showNotice(error.message)
+    }
+  }
+
   if (auth.status === "checking") {
     return (
       <div className="admin-page admin-page--center">
@@ -1165,6 +1256,10 @@ export default function AdminPage() {
               <Icon name="download" size={16} />
               Exportar CSV
             </button>
+            <button type="button" className="admin-button" onClick={handleBackup}>
+              <Icon name="download" size={16} />
+              Backup JSON
+            </button>
             <button
               type="button"
               className="admin-button"
@@ -1177,6 +1272,28 @@ export default function AdminPage() {
             </button>
           </div>
         </header>
+
+        {health ? (
+          <div className="admin-health" aria-label="Estado del sistema">
+            <span className={health.storage ? "is-ok" : "is-warn"} title="Base de datos Redis">
+              <i />
+              Base de datos
+            </span>
+            <span className={health.email ? "is-ok" : "is-warn"} title={`Proveedor: ${health.emailProvider || "sin configurar"}`}>
+              <i />
+              Email
+            </span>
+            <span className={health.twoFactor ? "is-ok" : "is-warn"} title="Código de seguridad por email">
+              <i />
+              2FA
+            </span>
+            <span className={health.cron ? "is-ok" : "is-warn"} title="Recordatorios y retención automáticos">
+              <i />
+              Cron
+            </span>
+            <span className="admin-health__info">Retención: {health.retentionDays} días</span>
+          </div>
+        ) : null}
 
         <section className="admin-stats" aria-label="Resumen de solicitudes">
           <button type="button" className={filter === "pending" ? "is-active" : ""} onClick={() => handleFilter("pending")}>
@@ -1195,6 +1312,79 @@ export default function AdminPage() {
             <span>Total</span>
             <strong>{stats.total}</strong>
           </button>
+        </section>
+
+        <section className="admin-metrics" aria-label="Métricas del panel">
+          <article className="admin-metric-card admin-metric-card--wide">
+            <div className="admin-metric-head">
+              <h2>Solicitudes por mes</h2>
+              <span>Últimos 6 meses</span>
+            </div>
+            <div className="admin-mini-bars">
+              {metrics.months.map((month) => (
+                <div className="admin-mini-bar" key={month.key} title={`${month.title}: ${month.count} solicitudes`}>
+                  <span className="admin-mini-bar__value">{month.count}</span>
+                  <span className="admin-mini-bar__track">
+                    <i style={{ height: `${Math.max(5, (month.count / metrics.maxMonth) * 100)}%` }} />
+                  </span>
+                  <span className="admin-mini-bar__label">{month.label}</span>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="admin-metric-card">
+            <div className="admin-metric-head">
+              <h2>Tasa de confirmación</h2>
+              <strong className="admin-metric-big">{metrics.confirmationRate}%</strong>
+            </div>
+            <div className="admin-progress" aria-hidden="true">
+              <i style={{ width: `${metrics.confirmationRate}%` }} />
+            </div>
+            <div className="admin-status-split">
+              <span>
+                <i className="is-pending" /> {stats.pending} pendientes
+              </span>
+              <span>
+                <i className="is-confirmed" /> {stats.confirmed} confirmadas
+              </span>
+              <span>
+                <i className="is-cancelled" /> {stats.cancelled} canceladas
+              </span>
+            </div>
+          </article>
+
+          <article className="admin-metric-card">
+            <div className="admin-metric-head">
+              <h2>Servicios más pedidos</h2>
+            </div>
+            {metrics.serviceCounts.length ? (
+              <ul className="admin-service-list">
+                {metrics.serviceCounts.map(([service, count]) => (
+                  <li key={service}>
+                    <span>{service}</span>
+                    <strong>{count}</strong>
+                    <i aria-hidden="true">
+                      <b style={{ width: `${Math.max(6, (count / metrics.maxService) * 100)}%` }} />
+                    </i>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="admin-metric-empty">Sin datos todavía.</p>
+            )}
+          </article>
+
+          <article className="admin-metric-card admin-metric-card--kpis">
+            <div>
+              <span>Tiempo medio de confirmación</span>
+              <strong>{metrics.averageConfirmation}</strong>
+            </div>
+            <div>
+              <span>Nuevas en los últimos 7 días</span>
+              <strong>{metrics.newLast7}</strong>
+            </div>
+          </article>
         </section>
 
         <section className="admin-toolbar" aria-label="Filtros de solicitudes">
