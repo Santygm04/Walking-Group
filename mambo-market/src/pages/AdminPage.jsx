@@ -991,7 +991,7 @@ export default function AdminPage() {
     if (auth.status !== "authenticated") return undefined
     let active = true
 
-    api("/api/admin/health")
+    api("/api/admin/system?view=health")
       .then((data) => {
         if (active) setHealth(data.services)
       })
@@ -1095,7 +1095,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
-      await api("/api/admin/logout", { method: "POST" })
+      await api("/api/admin/session", { method: "POST" })
     } catch {
       // La sesión local se cierra igualmente.
     }
@@ -1173,7 +1173,7 @@ export default function AdminPage() {
 
   const handleBackup = async () => {
     try {
-      const data = await api("/api/admin/backup")
+      const data = await api("/api/admin/system?view=backup")
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")

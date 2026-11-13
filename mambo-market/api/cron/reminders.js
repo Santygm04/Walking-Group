@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { safeEqual } from "../_security.js"
-import { listRequests, storageAvailable, updateRequest } from "../_storage.js"
+import { deleteRequest, listRequests, storageAvailable, updateRequest } from "../_storage.js"
 import { buildMeetingLinks, buildReminderEmail, createTransport, getContactEmail, getFromAddress, meetingTimestampART } from "../_utils.js"
 
 const WINDOW_MS = 36 * 60 * 60 * 1000
@@ -29,14 +29,33 @@ export default async function handler(req, res) {
 
   try {
     const now = Date.now()
-    const requests = (await listRequests())
+    const allRequests = await listRequests()
+
+    const retentionDaysRaw = Number(process.env.DATA_RETENTION_DAYS || 730)
+    const retentionDays = Number.isFinite(retentionDaysRaw) && retentionDaysRaw > 0 ? retentionDaysRaw : 730
+    const retentionCutoff = now - retentionDays * 24 * 60 * 60 * 1000
+    const expiredRequests = allRequests
+      .filter((request) => request.createdAt && request.createdAt < retentionCutoff)
+      .slice(0, 100)
+
+    let retentionDeleted = 0
+    for (const request of expiredRequests) {
+      try {
+        await deleteRequest(request.id)
+        retentionDeleted += 1
+      } catch (error) {
+        console.error("retention-delete-error", request.id, error?.message)
+      }
+    }
+
+    const requests = allRequests
       .filter((request) => request.status === "confirmed" && !request.reminderSentAt)
       .map((request) => ({ request, at: meetingTimestampART(request.date, request.time) }))
       .filter(({ at }) => at !== null && at >= now && at - now <= WINDOW_MS)
       .slice(0, MAX_PER_RUN)
 
     if (!requests.length) {
-      return res.status(200).json({ ok: true, sent: 0, failed: 0, checked: 0 })
+      return res.status(200).json({ ok: true, sent: 0, failed: 0, checked: 0, retentionDeleted })
     }
 
     const transport = createTransport()
@@ -79,7 +98,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ ok: true, sent, failed, checked: requests.length })
+    return res.status(200).json({ ok: true, sent, failed, checked: requests.length, retentionDeleted })
   } catch (error) {
     console.error("reminders-cron-error", error?.message)
     return res.status(500).json({ error: "CRON_FAILED", message: "No pudimos procesar los recordatorios." })
