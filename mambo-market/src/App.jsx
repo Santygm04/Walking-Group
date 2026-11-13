@@ -12,6 +12,7 @@ import SiteFooter from "./sections/SiteFooter/SiteFooter"
 import ConfirmationPage from "./pages/ConfirmationPage"
 import AdminPage from "./pages/AdminPage"
 import LegalPage from "./pages/LegalPage"
+import ManageBookingPage from "./pages/ManageBookingPage"
 import { useMagnetic, usePrefersReducedMotion, useRevealOnScroll } from "./hooks/useUI"
 
 function LandingPage() {
@@ -67,6 +68,12 @@ export default function App() {
 
   if (pathname === "/terminos") {
     return <LegalPage type="terms" />
+  }
+
+  if (pathname === "/gestionar") {
+    const manageToken =
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") || "" : ""
+    return <ManageBookingPage token={manageToken} />
   }
 
   const token = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("confirmar") : ""

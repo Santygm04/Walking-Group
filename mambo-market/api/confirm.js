@@ -1,5 +1,6 @@
 import {
   buildConfirmedEmail,
+  buildMeetingLinks,
   createTransport,
   getContactEmail,
   getFromAddress,
@@ -83,7 +84,15 @@ export default async function handler(req, res) {
 
   try {
     const transport = createTransport()
-    const email = buildConfirmedEmail(payload)
+    const links = buildMeetingLinks({
+      id: payload.requestId,
+      email: payload.email,
+      name: payload.nombre,
+      service: payload.servicio,
+      date: payload.fecha,
+      time: payload.hora,
+    })
+    const email = buildConfirmedEmail(payload, links)
 
     await transport.sendMail({
       from: getFromAddress(),

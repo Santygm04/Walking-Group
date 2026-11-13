@@ -31,6 +31,8 @@ const HISTORY_LABELS = {
   edited: "Solicitud editada",
   note: "Nota interna",
   reminder: "Recordatorio enviado",
+  client_rescheduled: "Cliente reprogramó la reunión",
+  client_cancelled: "Cliente canceló la reunión",
 }
 
 const PAGE_SIZE = 9

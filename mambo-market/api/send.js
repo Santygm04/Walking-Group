@@ -2,6 +2,7 @@ import crypto from "node:crypto"
 import {
   buildAdminEmail,
   buildConfirmationUrl,
+  buildMeetingLinks,
   buildPendingEmail,
   createTransport,
   getAdminEmail,
@@ -132,7 +133,8 @@ export default async function handler(req, res) {
     const transport = createTransport()
 
     const adminEmail = buildAdminEmail(form, confirmUrl)
-    const pendingEmail = buildPendingEmail(form)
+    const meetingLinks = buildMeetingLinks(record)
+    const pendingEmail = buildPendingEmail(form, { manageUrl: meetingLinks.manageUrl })
 
     await transport.sendMail({
       from: getFromAddress(),

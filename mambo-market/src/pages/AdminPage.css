@@ -1656,3 +1656,10 @@
 .admin-login__lead strong {
   color: var(--navy);
 }
+.admin-history-dot--client_rescheduled {
+  background: #3b6ea5;
+}
+
+.admin-history-dot--client_cancelled {
+  background: #aa2f22;
+}

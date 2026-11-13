@@ -3,6 +3,7 @@ import { requireAdmin } from "../_auth.js"
 import {
   buildCancelledEmail,
   buildConfirmedEmail,
+  buildMeetingLinks,
   buildReminderEmail,
   buildReplyEmail,
   buildUpdatedEmail,
@@ -79,12 +80,16 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: "ALREADY_CONFIRMED", message: "La reunión ya está confirmada." })
       }
 
-      const email = buildConfirmedEmail({
-        nombre: record.name,
-        fecha: record.date,
-        hora: record.time,
-        servicio: record.service,
-      })
+      const links = buildMeetingLinks(record)
+      const email = buildConfirmedEmail(
+        {
+          nombre: record.name,
+          fecha: record.date,
+          hora: record.time,
+          servicio: record.service,
+        },
+        links,
+      )
 
       const transport = createTransport()
       await transport.sendMail({
@@ -185,7 +190,8 @@ export default async function handler(req, res) {
         })
       }
 
-      const email = buildReminderEmail(record)
+      const links = buildMeetingLinks(record)
+      const email = buildReminderEmail(record, links)
       const transport = createTransport()
       await transport.sendMail({
         from: getFromAddress(),
@@ -266,7 +272,8 @@ export default async function handler(req, res) {
 
       if (notifyClient && changed.length && record.status !== "cancelled") {
         const nextRecord = { ...record, ...fields }
-        const email = buildUpdatedEmail(nextRecord)
+        const links = buildMeetingLinks(nextRecord)
+        const email = buildUpdatedEmail(nextRecord, links)
         const transport = createTransport()
         await transport.sendMail({
           from: getFromAddress(),

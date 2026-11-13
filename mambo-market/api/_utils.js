@@ -263,7 +263,7 @@ export function buildAdminEmail(form, confirmUrl) {
   }
 }
 
-export function buildPendingEmail(form) {
+export function buildPendingEmail(form, links = {}) {
   const rows = [
     ["Fecha", formatDateLong(form.fechaPreferida)],
     ["Horario (Argentina)", formatTime(form.horaPreferida)],
@@ -287,6 +287,7 @@ export function buildPendingEmail(form) {
       <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
         Si necesitás cambiar algún dato, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
       </p>
+      ${meetingActionsHtml(links)}
     `,
   })
 
@@ -302,6 +303,7 @@ export function buildPendingEmail(form) {
     "El equipo va a revisar la disponibilidad y vas a recibir un email de confirmación.",
     "",
     `Si necesitás cambiar algún dato, respondé este email o escribinos a ${getContactEmail()}.`,
+    meetingActionsText(links),
   ].join("\n")
 
   return {
@@ -311,7 +313,7 @@ export function buildPendingEmail(form) {
   }
 }
 
-export function buildConfirmedEmail(meeting) {
+export function buildConfirmedEmail(meeting, links = {}) {
   const rows = [
     ["Fecha", formatDateLong(meeting.fecha)],
     ["Horario (Argentina)", formatTime(meeting.hora)],
@@ -334,6 +336,7 @@ export function buildConfirmedEmail(meeting) {
       <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
         Si necesitás reprogramar, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
       </p>
+      ${meetingActionsHtml(links)}
     `,
   })
 
@@ -347,6 +350,7 @@ export function buildConfirmedEmail(meeting) {
     "",
     "Estado: CONFIRMADA.",
     `Si necesitás reprogramar, respondé este email o escribinos a ${getContactEmail()}.`,
+    meetingActionsText(links),
   ].join("\n")
 
   return {
@@ -467,7 +471,7 @@ export function buildReplyEmail(record, subject, message) {
   }
 }
 
-export function buildUpdatedEmail(record) {
+export function buildUpdatedEmail(record, links = {}) {
   const confirmed = record.status === "confirmed"
   const rows = [
     ["Fecha", formatDateLong(record.date)],
@@ -489,6 +493,7 @@ export function buildUpdatedEmail(record) {
       <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
         Si necesitás cambiar algo, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
       </p>
+      ${meetingActionsHtml(links)}
     `,
   })
 
@@ -505,6 +510,7 @@ export function buildUpdatedEmail(record) {
       `Estado: ${confirmed ? "Confirmada" : "Pendiente de confirmación"}`,
       "",
       `Si necesitás cambiar algo, respondé este email o escribinos a ${getContactEmail()}.`,
+      meetingActionsText(links),
     ].join("\n"),
   }
 }
@@ -558,7 +564,7 @@ export function meetingTimestampART(date, time) {
   return Date.UTC(year, month - 1, day, hours + 3, minutes, 0, 0)
 }
 
-export function buildReminderEmail(record) {
+export function buildReminderEmail(record, links = {}) {
   const rows = [
     ["Fecha", formatDateLong(record.date)],
     ["Horario (Argentina)", formatTime(record.time)],
@@ -578,6 +584,7 @@ export function buildReminderEmail(record) {
       <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
         Si necesitás reprogramar, respondé este email o escribinos a ${escapeHtml(getContactEmail())}.
       </p>
+      ${meetingActionsHtml(links)}
     `,
   })
 
@@ -593,6 +600,131 @@ export function buildReminderEmail(record) {
       `Servicio: ${record.service}`,
       "",
       `Si necesitás reprogramar, respondé este email o escribinos a ${getContactEmail()}.`,
+      meetingActionsText(links),
+    ].join("\n"),
+  }
+}
+
+export function buildManageToken(record) {
+  return signToken({
+    scope: "manage",
+    requestId: record.id,
+    email: record.email,
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 60,
+  })
+}
+
+export function verifyManageToken(token) {
+  const payload = verifyToken(token)
+  if (!payload || payload.scope !== "manage" || !payload.requestId) return null
+  return payload
+}
+
+export function buildMeetingLinks(record) {
+  const token = buildManageToken(record)
+  const encoded = encodeURIComponent(token)
+  return {
+    manageUrl: `${getSiteUrl()}/gestionar?token=${encoded}`,
+    calendarUrl: `${getSiteUrl()}/api/calendar?token=${encoded}`,
+    googleCalendarUrl: buildGoogleCalendarUrl(record),
+  }
+}
+
+export function buildGoogleCalendarUrl(record) {
+  const start = meetingTimestampART(record.date, record.time)
+  if (!start) return ""
+
+  const end = start + 45 * 60 * 1000
+  const format = (value) => new Date(value).toISOString().replace(/[-:]/g, "").replace(/\\.\\d{3}/, "")
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "Reunión con Mambo Market",
+    dates: `${format(start)}/${format(end)}`,
+    details: `Servicio: ${record.service || "A coordinar"}`,
+    location: "A coordinar",
+  })
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`
+}
+
+function meetingActionsHtml(links) {
+  if (!links?.manageUrl) return ""
+
+  const calendarLinks = [
+    links.googleCalendarUrl
+      ? `<a href="${escapeHtml(links.googleCalendarUrl)}" style="color:#b8430f;text-decoration:underline;">Agregar a Google Calendar</a>`
+      : "",
+    links.calendarUrl
+      ? `<a href="${escapeHtml(links.calendarUrl)}" style="color:#b8430f;text-decoration:underline;">Descargar .ics</a>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" · ")
+
+  return `
+    <div style="margin:22px 0 0;">
+      ${emailButton(links.manageUrl, "Gestionar mi reunión")}
+      ${
+        calendarLinks
+          ? `<p style="margin:12px 0 0;font-size:12px;line-height:1.7;color:#5d6670;">${calendarLinks}</p>`
+          : ""
+      }
+    </div>
+  `
+}
+
+function meetingActionsText(links) {
+  if (!links?.manageUrl) return ""
+  const lines = ["", "Gestionar mi reunión:", links.manageUrl]
+  if (links.googleCalendarUrl) lines.push("", "Agregar a Google Calendar:", links.googleCalendarUrl)
+  if (links.calendarUrl) lines.push("", "Descargar .ics:", links.calendarUrl)
+  return lines.join("\\n")
+}
+
+export function buildAdminClientActionEmail(record, action, previous = {}) {
+  const rescheduled = action === "rescheduled"
+  const rows = [
+    ["Cliente", record.name],
+    ["Empresa", record.company],
+    ["Email", record.email],
+    ["Teléfono", record.phone],
+    ["Servicio", record.service],
+    ["Fecha", formatDateLong(record.date)],
+    ["Horario (Argentina)", formatTime(record.time)],
+    ...(rescheduled
+      ? [
+          ["Fecha anterior", formatDateLong(previous.date)],
+          ["Horario anterior", formatTime(previous.time)],
+        ]
+      : []),
+  ]
+
+  const actionLabel = rescheduled ? "reprogramó" : "canceló"
+  const panelUrl = `${getSiteUrl()}/admin`
+
+  const html = emailShell({
+    title: rescheduled ? "Reunión reprogramada por el cliente" : "Reunión cancelada por el cliente",
+    preheader: `${record.name} ${actionLabel} la reunión.`,
+    content: `
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Acción del cliente</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">${escapeHtml(record.name)} ${actionLabel} la reunión</h1>
+      ${detailsTable(rows)}
+      ${emailButton(panelUrl, "Abrir panel de administración")}
+      <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#7b838c;">
+        El cambio ya está guardado en el panel.
+      </p>
+    `,
+  })
+
+  return {
+    subject: `${rescheduled ? "Reunión reprogramada" : "Reunión cancelada"} por el cliente — ${record.name}`,
+    html,
+    text: [
+      `${record.name} ${actionLabel} la reunión con Mambo Market.`,
+      "",
+      ...rows.map(([label, value]) => `${label}: ${value}`),
+      "",
+      `Panel: ${panelUrl}`,
     ].join("\n"),
   }
 }
