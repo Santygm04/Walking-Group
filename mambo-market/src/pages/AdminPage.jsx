@@ -932,6 +932,9 @@ export default function AdminPage() {
   const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef(0)
+  const requestTrackerRef = useRef({ loaded: false, ids: new Set() })
+  const loadRequestsRef = useRef(null)
+  const pollingRef = useRef(false)
 
   useEffect(() => {
     document.title = "Panel — Mambo Market"
@@ -971,23 +974,69 @@ export default function AdminPage() {
     noticeTimer.current = window.setTimeout(() => setNotice(""), 3200)
   }
 
-  const loadRequests = async () => {
-    setListState({ loading: true, error: "" })
+  const loadRequests = async ({ silent = false } = {}) => {
+    if (!silent) setListState({ loading: true, error: "" })
     try {
       const data = await api("/api/admin/requests")
-      setRequests(Array.isArray(data.requests) ? data.requests : [])
+      const next = Array.isArray(data.requests) ? data.requests : []
+      const tracker = requestTrackerRef.current
+      const fresh = tracker.loaded ? next.filter((request) => !tracker.ids.has(request.id)) : []
+
+      requestTrackerRef.current = {
+        loaded: true,
+        ids: new Set(next.map((request) => request.id)),
+      }
+      setRequests(next)
       setListState({ loading: false, error: "" })
+
+      if (silent && fresh.length) {
+        showNotice(
+          fresh.length === 1
+            ? `Nueva solicitud de ${fresh[0].name}.`
+            : `Llegaron ${fresh.length} solicitudes nuevas.`,
+        )
+      }
     } catch (error) {
       if (error.status === 401) {
         setAuth({ status: "guest", email: "" })
         return
       }
-      setListState({ loading: false, error: error.message })
+      if (!silent) setListState({ loading: false, error: error.message })
     }
   }
 
+  loadRequestsRef.current = loadRequests
+
   useEffect(() => {
-    if (auth.status === "authenticated") loadRequests()
+    if (auth.status === "authenticated") loadRequestsRef.current?.()
+  }, [auth.status])
+
+  useEffect(() => {
+    if (auth.status !== "authenticated") return undefined
+
+    const refreshSilently = () => {
+      if (document.hidden || pollingRef.current) return
+      pollingRef.current = true
+      loadRequestsRef
+        .current({ silent: true })
+        .finally(() => {
+          pollingRef.current = false
+        })
+    }
+
+    const interval = window.setInterval(refreshSilently, 5000)
+    const handleVisibility = () => {
+      if (!document.hidden) refreshSilently()
+    }
+
+    document.addEventListener("visibilitychange", handleVisibility)
+    window.addEventListener("focus", handleVisibility)
+
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener("visibilitychange", handleVisibility)
+      window.removeEventListener("focus", handleVisibility)
+    }
   }, [auth.status])
 
   useEffect(() => {
@@ -1273,7 +1322,13 @@ export default function AdminPage() {
       <main className="admin-main">
         <header className="admin-topbar">
           <div>
-            <p className="admin-eyebrow">Solicitudes de reunión</p>
+            <p className="admin-eyebrow">
+              Solicitudes de reunión
+              <span className="admin-live" title="Las solicitudes se actualizan automáticamente cada 5 segundos">
+                <i aria-hidden="true" />
+                En vivo
+              </span>
+            </p>
             <h1>Panel de administración</h1>
           </div>
           <div className="admin-topbar__actions">

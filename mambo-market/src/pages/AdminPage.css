@@ -2278,3 +2278,47 @@ button.admin-nav__item {
   text-align: left;
   cursor: pointer;
 }
+
+.admin-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 3px 7px;
+  border: 1px solid #cfe3d3;
+  border-radius: var(--radius-pill);
+  background: #e7f2ea;
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: #2e6b3e;
+}
+
+.admin-live i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2e6b3e;
+  animation: admin-live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes admin-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-live i {
+    animation: none;
+  }
+}
