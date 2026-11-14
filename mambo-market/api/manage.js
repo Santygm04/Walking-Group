@@ -13,7 +13,8 @@ import {
   sanitizeLine,
   verifyManageToken,
 } from "./_utils.js"
-import { getRequest, updateRequest } from "./_storage.js"
+import { getRequest, listRequests, updateRequest } from "./_storage.js"
+import { getAvailabilitySettings, isSlotAvailable } from "./_availability.js"
 import { getClientIp, rateLimit, requireSameOrigin, sendRateLimitResponse } from "./_security.js"
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -100,6 +101,13 @@ export default async function handler(req, res) {
   const body = parseBody(req)
   const action = sanitizeLine(body.action, 20)
 
+  if ((action === "reschedule" || action === "cancel") && record.status === "confirmed") {
+    return res.status(403).json({
+      error: "CONFIRMED_IMMUTABLE",
+      message: "La reunión ya está confirmada. Para reprogramarla o cancelarla, escribinos por email.",
+    })
+  }
+
   if (action === "reschedule") {
     if (record.status === "cancelled") {
       return res.status(409).json({ error: "CANCELLED", message: "La reunión ya está cancelada." })
@@ -115,6 +123,22 @@ export default async function handler(req, res) {
 
     if (timestamp < Date.now()) {
       return res.status(400).json({ error: "PAST_DATE", message: "Elegí una fecha y horario futuros." })
+    }
+
+    let settings
+    let requests
+    try {
+      ;[settings, requests] = await Promise.all([getAvailabilitySettings(), listRequests()])
+    } catch (error) {
+      console.error("manage-availability-error", error?.message)
+      return res.status(500).json({ error: "AVAILABILITY_FAILED", message: "No pudimos validar la disponibilidad." })
+    }
+
+    if (!isSlotAvailable(settings, requests, date, time, record.id)) {
+      return res.status(409).json({
+        error: "SLOT_UNAVAILABLE",
+        message: "Ese horario ya no está disponible. Elegí otro día u horario.",
+      })
     }
 
     const previous = { date: record.date, time: record.time }

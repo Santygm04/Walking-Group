@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Icon from "../components/Icon"
+import BookingCalendar from "../components/BookingCalendar"
 import { CONTACT_EMAIL } from "../data/siteData"
 import "./ManageBookingPage.css"
 
@@ -45,8 +46,7 @@ function Brand() {
 
 export default function ManageBookingPage({ token }) {
   const [state, setState] = useState({ status: "loading", meeting: null, message: "" })
-  const [date, setDate] = useState("")
-  const [time, setTime] = useState("")
+  const [draft, setDraft] = useState({ date: "", time: "" })
   const [rescheduleOpen, setRescheduleOpen] = useState(false)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [notice, setNotice] = useState("")
@@ -65,8 +65,6 @@ export default function ManageBookingPage({ token }) {
         if (!response.ok) throw new Error(data.message || "El enlace no es válido o venció.")
         if (!active) return
         setState({ status: "ready", meeting: data.meeting, message: "" })
-        setDate(data.meeting.date || "")
-        setTime(data.meeting.time || "")
       })
       .catch((error) => {
         if (!active) return
@@ -85,6 +83,10 @@ export default function ManageBookingPage({ token }) {
   const handleReschedule = async (event) => {
     event.preventDefault()
     if (state.status === "working") return
+    if (!draft.date || !draft.time) {
+      setNotice("Elegí un día y un horario disponibles en el calendario.")
+      return
+    }
     setNotice("")
     setState((previous) => ({ ...previous, status: "working" }))
 
@@ -92,14 +94,13 @@ export default function ManageBookingPage({ token }) {
       const response = await fetch("/api/manage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, action: "reschedule", date, time }),
+        body: JSON.stringify({ token, action: "reschedule", date: draft.date, time: draft.time }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.message || "No pudimos reprogramar la reunión.")
 
       setState({ status: "ready", meeting: data.meeting, message: "" })
-      setDate(data.meeting.date)
-      setTime(data.meeting.time)
+      setDraft({ date: "", time: "" })
       setRescheduleOpen(false)
       setNotice(
         data.emailSent
@@ -185,7 +186,9 @@ export default function ManageBookingPage({ token }) {
 
               <h1>Hola, {meeting.name}.</h1>
               <p className="confirm-card__lead">
-                Desde acá podés revisar los datos de tu reunión y reprogramarla o cancelarla.
+                {meeting.status === "confirmed"
+                  ? "Tu reunión está confirmada. Revisá los detalles y agregala a tu calendario."
+                  : "Desde acá podés revisar los datos de tu reunión y reprogramarla o cancelarla."}
               </p>
 
               <dl className="confirm-details">
@@ -231,6 +234,13 @@ export default function ManageBookingPage({ token }) {
                     </a>
                   </div>
 
+                  {meeting.status === "confirmed" ? (
+                    <p className="manage-readonly">
+                      Tu reunión ya está confirmada. Si necesitás reprogramarla o cancelarla, escribinos a{" "}
+                      <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> y lo coordinamos.
+                    </p>
+                  ) : (
+                    <>
                   <div className="manage-actions">
                     <button
                       type="button"
@@ -263,26 +273,7 @@ export default function ManageBookingPage({ token }) {
                         <h2>Elegí un nuevo horario</h2>
                         <p>Los horarios se expresan en hora de Argentina (GMT-3).</p>
                       </div>
-                      <div className="manage-form__grid">
-                        <label>
-                          Nueva fecha
-                          <input
-                            type="date"
-                            value={date}
-                            onChange={(event) => setDate(event.target.value)}
-                            required
-                          />
-                        </label>
-                        <label>
-                          Nuevo horario
-                          <input
-                            type="time"
-                            value={time}
-                            onChange={(event) => setTime(event.target.value)}
-                            required
-                          />
-                        </label>
-                      </div>
+                      <BookingCalendar value={draft} onChange={setDraft} />
                       <button type="submit" className="btn btn--accent" disabled={state.status === "working"}>
                         {state.status === "working" ? "Guardando…" : "Confirmar nuevo horario"}
                         <Icon name="check" size={16} />
@@ -303,6 +294,8 @@ export default function ManageBookingPage({ token }) {
                       </div>
                     </div>
                   ) : null}
+                    </>
+                  )}
                 </>
               ) : (
                 <p className="manage-cancelled-note">

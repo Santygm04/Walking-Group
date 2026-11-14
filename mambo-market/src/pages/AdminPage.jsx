@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Icon from "../components/Icon"
 import { BUDGET_OPTIONS, CONTACT_EMAIL, SERVICE_OPTIONS, URGENCY_OPTIONS } from "../data/siteData"
+import AvailabilityManager from "./AvailabilityManager"
 import "./AdminPage.css"
 
 const STATUS = {
@@ -928,6 +929,7 @@ export default function AdminPage() {
   const [actionState, setActionState] = useState({ loading: false, error: "", success: "" })
   const [health, setHealth] = useState(null)
   const [analyticsState, setAnalyticsState] = useState({ loading: false, error: "", data: null })
+  const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef(0)
 
@@ -1271,6 +1273,10 @@ export default function AdminPage() {
             <h1>Panel de administración</h1>
           </div>
           <div className="admin-topbar__actions">
+            <button type="button" className="admin-button" onClick={() => setAvailabilityOpen(true)}>
+              <Icon name="calendar" size={16} />
+              Disponibilidad
+            </button>
             <button type="button" className="admin-button" onClick={handleExport} disabled={!filtered.length}>
               <Icon name="download" size={16} />
               Exportar CSV
@@ -1765,6 +1771,17 @@ export default function AdminPage() {
         onClose={() => setSelected(null)}
         onAction={runAction}
         actionState={actionState}
+      />
+
+      <AvailabilityManager
+        open={availabilityOpen}
+        onClose={() => setAvailabilityOpen(false)}
+        requests={requests}
+        onSaved={() => showNotice("Disponibilidad actualizada.")}
+        onUnauthorized={() => {
+          setAvailabilityOpen(false)
+          setAuth({ status: "guest", email: "" })
+        }}
       />
 
       {notice ? (

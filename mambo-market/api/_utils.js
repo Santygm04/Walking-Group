@@ -218,20 +218,22 @@ export function buildAdminEmail(form, confirmUrl) {
     ["Mensaje", form.mensaje],
   ]
 
-  const html = emailShell({
+  const html = adminEmailShell({
     title: "Nueva solicitud de reunión",
     preheader: `${form.nombre} solicitó una reunión para ${formatDateLong(form.fechaPreferida)}.`,
     content: `
-      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Nueva solicitud</p>
-      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Revisá y confirmá la reunión</h1>
-      <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:#5d6670;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#e8632c;">Nueva solicitud</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#ffffff;">Revisá y confirmá la reunión</h1>
+      <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:#b9c0c7;">
         ${escapeHtml(form.nombre)} envió una solicitud de reunión desde la web de Mambo Market.
       </p>
-      ${detailsTable(rows)}
-      ${emailButton(confirmUrl, "Confirmar reunión")}
-      <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#7b838c;">
+      ${adminDetailsTable(rows)}
+      ${adminEmailButton(confirmUrl, "Confirmar reunión")}
+      <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#8c969f;">
         Al confirmar, se enviará un email de confirmación a ${escapeHtml(form.email)}.
         Si el botón no funciona, copiá este enlace: ${escapeHtml(confirmUrl)}
+        <br />
+        <a href="${escapeHtml(getSiteUrl())}/admin" style="color:#e8632c;">Abrir panel de administración</a>
       </p>
     `,
   })
@@ -257,7 +259,7 @@ export function buildAdminEmail(form, confirmUrl) {
   ].join("\n")
 
   return {
-    subject: `Nueva solicitud de reunión — ${form.nombre}`,
+    subject: `[Admin] Nueva solicitud de reunión — ${form.nombre}`,
     html,
     text,
   }
@@ -516,26 +518,26 @@ export function buildUpdatedEmail(record, links = {}) {
 }
 
 export function buildOtpEmail(code) {
-  const html = emailShell({
-    title: "Código de acceso",
+  const html = adminEmailShell({
+    title: "Código de acceso al panel",
     preheader: "Tu código de acceso al panel de Mambo Market.",
     content: `
-      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Acceso al panel</p>
-      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">Tu código de seguridad</h1>
-      <p style="margin:12px 0 18px;font-size:14px;line-height:1.6;color:#5d6670;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#e8632c;">Acceso al panel</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#ffffff;">Tu código de seguridad</h1>
+      <p style="margin:12px 0 18px;font-size:14px;line-height:1.6;color:#b9c0c7;">
         Usá este código para completar el ingreso al panel de administración de Mambo Market.
       </p>
-      <p style="margin:0;padding:18px;border-radius:10px;background:#0e1a26;color:#ffffff;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:8px;text-align:center;">
+      <p style="margin:0;padding:18px;border-radius:10px;background:#f6f5f1;color:#0e1a26;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:8px;text-align:center;">
         ${escapeHtml(code)}
       </p>
-      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#5d6670;">
+      <p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#8c969f;">
         El código vence en 10 minutos y solo se puede usar una vez. Si no fuiste vos, cambiá la contraseña del panel.
       </p>
     `,
   })
 
   return {
-    subject: "Código de acceso — Panel Mambo Market",
+    subject: "[Admin] Código de acceso — Panel Mambo Market",
     html,
     text: [
       "CÓDIGO DE ACCESO — PANEL MAMBO MARKET",
@@ -702,22 +704,22 @@ export function buildAdminClientActionEmail(record, action, previous = {}) {
   const actionLabel = rescheduled ? "reprogramó" : "canceló"
   const panelUrl = `${getSiteUrl()}/admin`
 
-  const html = emailShell({
+  const html = adminEmailShell({
     title: rescheduled ? "Reunión reprogramada por el cliente" : "Reunión cancelada por el cliente",
     preheader: `${record.name} ${actionLabel} la reunión.`,
     content: `
-      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#b8430f;">Acción del cliente</p>
-      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#0e1a26;">${escapeHtml(record.name)} ${actionLabel} la reunión</h1>
-      ${detailsTable(rows)}
-      ${emailButton(panelUrl, "Abrir panel de administración")}
-      <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#7b838c;">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#e8632c;">Acción del cliente</p>
+      <h1 style="margin:0;font-size:24px;line-height:1.2;color:#ffffff;">${escapeHtml(record.name)} ${actionLabel} la reunión</h1>
+      ${adminDetailsTable(rows)}
+      ${adminEmailButton(panelUrl, "Abrir panel de administración")}
+      <p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#8c969f;">
         El cambio ya está guardado en el panel.
       </p>
     `,
   })
 
   return {
-    subject: `${rescheduled ? "Reunión reprogramada" : "Reunión cancelada"} por el cliente — ${record.name}`,
+    subject: `[Admin] ${rescheduled ? "Reunión reprogramada" : "Reunión cancelada"} por el cliente — ${record.name}`,
     html,
     text: [
       `${record.name} ${actionLabel} la reunión con Mambo Market.`,
@@ -727,4 +729,56 @@ export function buildAdminClientActionEmail(record, action, previous = {}) {
       `Panel: ${panelUrl}`,
     ].join("\n"),
   }
+}
+
+function adminEmailShell({ title, preheader, content }) {
+  return `<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#070f16;font-family:Arial,Helvetica,sans-serif;color:#f6f5f1;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#070f16;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#0e1a26;border:1px solid #243442;border-radius:14px;overflow:hidden;">
+            <tr><td style="height:4px;background:#e8632c;line-height:4px;">&nbsp;</td></tr>
+            <tr>
+              <td style="padding:18px 26px;border-bottom:1px solid #243442;">
+                <span style="font-size:14px;font-weight:bold;letter-spacing:1px;color:#ffffff;">MAMBO MARKET</span>
+                <span style="float:right;padding:4px 8px;border:1px solid #e8632c;border-radius:999px;font-size:9px;font-weight:bold;letter-spacing:1px;color:#e8632c;">PANEL ADMIN</span>
+              </td>
+            </tr>
+            <tr><td style="padding:30px 26px;">${content}</td></tr>
+            <tr>
+              <td style="padding:16px 26px;background:#0a141d;border-top:1px solid #243442;font-size:11px;line-height:1.6;color:#8c969f;">
+                Email interno del panel de administración · Mambo Market
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
+}
+
+function adminEmailButton(url, label) {
+  return `<a href="${escapeHtml(url)}" style="display:inline-block;margin-top:8px;padding:13px 22px;border-radius:8px;background:#e8632c;color:#0e1a26;font-size:14px;font-weight:bold;text-decoration:none;">${escapeHtml(label)}</a>`
+}
+
+function adminDetailsTable(rows) {
+  const cells = rows
+    .map(
+      ([label, value]) => `<tr>
+        <td style="padding:8px 0;border-bottom:1px solid #243442;font-size:12px;color:#8c969f;width:120px;vertical-align:top;">${escapeHtml(label)}</td>
+        <td style="padding:8px 0;border-bottom:1px solid #243442;font-size:14px;line-height:1.5;color:#f6f5f1;font-weight:600;">${escapeHtml(value || "—")}</td>
+      </tr>`,
+    )
+    .join("")
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:18px 0;border-collapse:collapse;">${cells}</table>`
 }

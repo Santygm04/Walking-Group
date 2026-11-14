@@ -14,7 +14,8 @@ import {
   sanitizeMultiline,
   signToken,
 } from "./_utils.js"
-import { saveRequest, storageConfigured } from "./_storage.js"
+import { saveRequest, storageConfigured, listRequests } from "./_storage.js"
+import { getAvailabilitySettings, isSlotAvailable } from "./_availability.js"
 import { getClientIp, rateLimit, sendRateLimitResponse } from "./_security.js"
 
 const REQUIRED_FIELDS = [
@@ -81,6 +82,25 @@ export default async function handler(req, res) {
 
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.horaPreferida)) {
       return res.status(400).json({ error: "INVALID_TIME", message: "El horario ingresado no es válido." })
+    }
+
+    let settings
+    let requests
+    try {
+      ;[settings, requests] = await Promise.all([getAvailabilitySettings(), listRequests()])
+    } catch (error) {
+      console.error("send-availability-error", error?.message)
+      return res.status(500).json({
+        error: "AVAILABILITY_FAILED",
+        message: "No pudimos validar la disponibilidad. Intentá nuevamente.",
+      })
+    }
+
+    if (!isSlotAvailable(settings, requests, form.fechaPreferida, form.horaPreferida)) {
+      return res.status(409).json({
+        error: "SLOT_UNAVAILABLE",
+        message: "Ese horario ya no está disponible. Elegí otro día u horario.",
+      })
     }
 
     const id = crypto.randomUUID()

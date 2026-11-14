@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Icon from "../../components/Icon"
+import BookingCalendar from "../../components/BookingCalendar"
 import {
   BUDGET_OPTIONS,
   CONTACT_EMAIL,
@@ -61,6 +62,7 @@ export default function Contact({ selectedService, selectionToken }) {
   const [form, setForm] = useState(INITIAL_FORM)
   const [highlighted, setHighlighted] = useState(false)
   const [status, setStatus] = useState({ type: "idle", message: "", fallback: "" })
+  const [bookingError, setBookingError] = useState("")
 
   useEffect(() => {
     if (!selectedService) return undefined
@@ -91,6 +93,13 @@ export default function Contact({ selectedService, selectionToken }) {
     event.preventDefault()
     if (status.type === "sending") return
 
+    if (!form.fechaPreferida || !form.horaPreferida) {
+      setBookingError("Elegí un día y un horario disponibles en el calendario.")
+      document.getElementById("booking-calendar")?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
+    }
+
+    setBookingError("")
     setStatus({ type: "sending", message: "", fallback: "" })
 
     try {
@@ -121,7 +130,6 @@ export default function Contact({ selectedService, selectionToken }) {
     }
   }
 
-  const minDate = new Date().toISOString().split("T")[0]
   const isSending = status.type === "sending"
 
   return (
@@ -399,40 +407,22 @@ export default function Contact({ selectedService, selectionToken }) {
                 <legend>
                   <span>03</span> Reunión
                 </legend>
-                <div className="form-grid">
-                <div className="field">
-                  <label htmlFor="fechaPreferida">
-                    Fecha de la reunión <span aria-hidden="true">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    id="fechaPreferida"
-                    name="fechaPreferida"
-                    value={form.fechaPreferida}
-                    onChange={handleChange}
-                    min={minDate}
-                    required
-                  />
-                </div>
-
-                <div className="field">
-                  <label htmlFor="horaPreferida">
-                    Horario preferido (Argentina) <span aria-hidden="true">*</span>
-                  </label>
-                  <input
-                    type="time"
-                    id="horaPreferida"
-                    name="horaPreferida"
-                    value={form.horaPreferida}
-                    onChange={handleChange}
-                    required
-                  />
-                  <small className="field__hint">
-                    Hora de Argentina (GMT-3). Elegí el horario que te quede mejor; te lo confirmamos por email.
-                  </small>
-                </div>
-
-                </div>
+                <BookingCalendar
+                  value={{ date: form.fechaPreferida, time: form.horaPreferida }}
+                  onChange={({ date, time }) => {
+                    setBookingError("")
+                    setForm((previous) => ({
+                      ...previous,
+                      fechaPreferida: date,
+                      horaPreferida: time,
+                    }))
+                  }}
+                />
+                {bookingError ? (
+                  <p className="booking-error" role="alert">
+                    {bookingError}
+                  </p>
+                ) : null}
               </fieldset>
 
               <button type="submit" className="btn btn--full contact-form__submit" disabled={isSending}>

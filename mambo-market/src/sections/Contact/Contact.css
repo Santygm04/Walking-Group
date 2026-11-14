@@ -502,3 +502,13 @@
     width: 17px;
   }
 }
+.booking-error {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--orange-line);
+  border-radius: var(--radius-sm);
+  background: var(--orange-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--orange-deep);
+}

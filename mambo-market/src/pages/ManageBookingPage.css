@@ -281,3 +281,20 @@
     width: 100%;
   }
 }
+
+.manage-readonly {
+  margin-top: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.manage-readonly a {
+  color: var(--orange-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
