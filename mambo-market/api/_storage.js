@@ -100,3 +100,64 @@ export async function deleteRequest(id) {
   const removed = await redisCommand(["HDEL", REQUESTS_KEY, id])
   return removed > 0
 }
+
+const ANALYTICS_KEY = "mambo:analytics:events"
+const ANALYTICS_MAX_EVENTS = 2000
+let analyticsMemory = globalThis.__mamboAnalytics || []
+globalThis.__mamboAnalytics = analyticsMemory
+
+function parseAnalyticsEvent(value) {
+  if (typeof value !== "string") return null
+  try {
+    const event = JSON.parse(value)
+    return event && typeof event === "object" ? event : null
+  } catch {
+    return null
+  }
+}
+
+export async function pushAnalyticsEvents(events) {
+  if (!Array.isArray(events) || !events.length) return false
+
+  if (!storageConfigured()) {
+    analyticsMemory = [...events, ...analyticsMemory].slice(0, ANALYTICS_MAX_EVENTS)
+    globalThis.__mamboAnalytics = analyticsMemory
+    return false
+  }
+
+  await redisCommand(["LPUSH", ANALYTICS_KEY, ...events.map((event) => JSON.stringify(event))])
+  await redisCommand(["LTRIM", ANALYTICS_KEY, 0, ANALYTICS_MAX_EVENTS - 1])
+  await redisCommand(["EXPIRE", ANALYTICS_KEY, 60 * 60 * 24 * 90])
+  return true
+}
+
+export async function listAnalyticsEvents(limit = ANALYTICS_MAX_EVENTS) {
+  if (!storageConfigured()) {
+    return analyticsMemory.slice(0, limit)
+  }
+
+  const raw = await redisCommand(["LRANGE", ANALYTICS_KEY, 0, Math.max(0, limit - 1)])
+  if (!Array.isArray(raw)) return []
+  return raw.map(parseAnalyticsEvent).filter(Boolean)
+}
+
+export async function pruneAnalyticsEvents(maxAgeDays = 90) {
+  const events = await listAnalyticsEvents(ANALYTICS_MAX_EVENTS)
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
+  const keep = events.filter((event) => event.at && event.at >= cutoff)
+
+  if (keep.length === events.length) return 0
+
+  if (!storageConfigured()) {
+    analyticsMemory = keep
+    globalThis.__mamboAnalytics = analyticsMemory
+    return events.length - keep.length
+  }
+
+  await redisCommand(["DEL", ANALYTICS_KEY])
+  if (keep.length) {
+    await redisCommand(["RPUSH", ANALYTICS_KEY, ...keep.map((event) => JSON.stringify(event))])
+    await redisCommand(["EXPIRE", ANALYTICS_KEY, 60 * 60 * 24 * maxAgeDays])
+  }
+  return events.length - keep.length
+}

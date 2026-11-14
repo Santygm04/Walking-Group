@@ -927,6 +927,7 @@ export default function AdminPage() {
   const [dialogMode, setDialogMode] = useState("detail")
   const [actionState, setActionState] = useState({ loading: false, error: "", success: "" })
   const [health, setHealth] = useState(null)
+  const [analyticsState, setAnalyticsState] = useState({ loading: false, error: "", data: null })
   const [notice, setNotice] = useState("")
   const noticeTimer = useRef(0)
 
@@ -991,7 +992,7 @@ export default function AdminPage() {
     if (auth.status !== "authenticated") return undefined
     let active = true
 
-    api("/api/admin/system?view=health")
+    api("/api/admin/requests?view=health")
       .then((data) => {
         if (active) setHealth(data.services)
       })
@@ -1000,6 +1001,24 @@ export default function AdminPage() {
     return () => {
       active = false
     }
+  }, [auth.status])
+
+  const loadAnalytics = async () => {
+    setAnalyticsState((previous) => ({ ...previous, loading: true, error: "" }))
+    try {
+      const data = await api("/api/analytics")
+      setAnalyticsState({ loading: false, error: "", data: data.analytics })
+    } catch (error) {
+      if (error.status === 401) {
+        setAuth({ status: "guest", email: "" })
+        return
+      }
+      setAnalyticsState({ loading: false, error: error.message, data: null })
+    }
+  }
+
+  useEffect(() => {
+    if (auth.status === "authenticated") loadAnalytics()
   }, [auth.status])
 
   useEffect(() => {
@@ -1173,7 +1192,7 @@ export default function AdminPage() {
 
   const handleBackup = async () => {
     try {
-      const data = await api("/api/admin/system?view=backup")
+      const data = await api("/api/admin/requests?view=backup")
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
@@ -1385,6 +1404,174 @@ export default function AdminPage() {
               <strong>{metrics.newLast7}</strong>
             </div>
           </article>
+        </section>
+
+        <section className="admin-analytics" aria-label="Anal?tica web">
+          <div className="admin-analytics__head">
+            <div>
+              <p className="admin-eyebrow">Comportamiento</p>
+              <h2>Anal?tica web</h2>
+              <p>Visitas y clics an?nimos del sitio p?blico.</p>
+            </div>
+            <button
+              type="button"
+              className="admin-button"
+              onClick={loadAnalytics}
+              disabled={analyticsState.loading}
+            >
+              <Icon name="refresh" size={16} />
+              {analyticsState.loading ? "Actualizando?" : "Actualizar anal?tica"}
+            </button>
+          </div>
+
+          {analyticsState.error ? (
+            <p className="admin-form-error" role="alert">
+              {analyticsState.error}
+            </p>
+          ) : null}
+
+          {analyticsState.loading && !analyticsState.data ? (
+            <div className="admin-analytics__loading">
+              <span className="admin-spinner" aria-hidden="true" />
+              <span>Cargando anal?tica?</span>
+            </div>
+          ) : null}
+
+          {analyticsState.data ? (
+            <>
+              <div className="analytics-kpis">
+                <article>
+                  <span>Visitas</span>
+                  <strong>{analyticsState.data.totals.pageViews}</strong>
+                </article>
+                <article>
+                  <span>Visitantes ?nicos</span>
+                  <strong>{analyticsState.data.totals.visitors}</strong>
+                </article>
+                <article>
+                  <span>Sesiones</span>
+                  <strong>{analyticsState.data.totals.sessions}</strong>
+                </article>
+                <article>
+                  <span>Clics</span>
+                  <strong>{analyticsState.data.totals.clicks}</strong>
+                </article>
+                <article>
+                  <span>Activos ?ltimos 30 min</span>
+                  <strong>{analyticsState.data.totals.activeVisitors}</strong>
+                </article>
+              </div>
+
+              <div className="analytics-grid">
+                <article className="analytics-card analytics-card--wide">
+                  <div className="analytics-card__head">
+                    <h3>Visitas de los ?ltimos 14 d?as</h3>
+                    <span>{analyticsState.data.totals.pageViews} en total</span>
+                  </div>
+                  <div className="analytics-chart">
+                    {analyticsState.data.daily.map((day) => {
+                      const max = Math.max(1, ...analyticsState.data.daily.map((item) => item.views))
+                      return (
+                        <div className="analytics-chart__bar" key={day.key} title={`${day.title}: ${day.views} visitas, ${day.clicks} clics`}>
+                          <span>{day.views}</span>
+                          <i>
+                            <b style={{ height: `${Math.max(4, (day.views / max) * 100)}%` }} />
+                          </i>
+                          <small>{day.label}</small>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </article>
+
+                <article className="analytics-card">
+                  <h3>P?ginas m?s vistas</h3>
+                  {analyticsState.data.topPages.length ? (
+                    <ul className="analytics-list">
+                      {analyticsState.data.topPages.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <strong>{item.count}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="analytics-empty">Sin visitas registradas.</p>
+                  )}
+                </article>
+
+                <article className="analytics-card">
+                  <h3>Clics m?s frecuentes</h3>
+                  {analyticsState.data.topClicks.length ? (
+                    <ul className="analytics-list">
+                      {analyticsState.data.topClicks.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <strong>{item.count}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="analytics-empty">Sin clics registrados.</p>
+                  )}
+                </article>
+
+                <article className="analytics-card">
+                  <h3>Ubicaciones</h3>
+                  {analyticsState.data.topLocations.length ? (
+                    <ul className="analytics-list">
+                      {analyticsState.data.topLocations.map((item) => (
+                        <li key={item.label}>
+                          <span>{item.label}</span>
+                          <strong>{item.count}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="analytics-empty">Sin datos de ubicaci?n.</p>
+                  )}
+                </article>
+              </div>
+
+              <div className="analytics-recent">
+                <h3>Actividad reciente</h3>
+                <div className="analytics-table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Hora</th>
+                        <th>Evento</th>
+                        <th>P?gina / elemento</th>
+                        <th>Ubicaci?n</th>
+                        <th>Visitante</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analyticsState.data.recent.map((event) => (
+                        <tr key={event.id}>
+                          <td>{formatTimestamp(event.at)}</td>
+                          <td>
+                            <span className={`analytics-event analytics-event--${event.type}`}>
+                              {event.type === "click" ? "Clic" : "Visita"}
+                            </span>
+                          </td>
+                          <td>{event.type === "click" ? event.label || event.href : event.path}</td>
+                          <td>{[event.city, event.country].filter(Boolean).join(", ") || "?"}</td>
+                          <td className="analytics-visitor">{(event.visitorId || "?").slice(0, 8)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!analyticsState.data.recent.length ? <p className="analytics-empty">Todav?a no hay actividad.</p> : null}
+              </div>
+
+              <p className="admin-analytics__note">
+                Anal?tica an?nima: no se guardan direcciones IP ni datos ingresados en formularios. Los visitantes se identifican
+                con un c?digo aleatorio del navegador.
+              </p>
+            </>
+          ) : null}
         </section>
 
         <section className="admin-toolbar" aria-label="Filtros de solicitudes">

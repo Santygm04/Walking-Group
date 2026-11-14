@@ -3,7 +3,7 @@ import Icon from "../components/Icon"
 import { CONTACT_EMAIL } from "../data/siteData"
 import "./LegalPage.css"
 
-const LAST_UPDATED = "12 de noviembre de 2026"
+const LAST_UPDATED = "13 de noviembre de 2026"
 
 function PrivacyContent() {
   return (

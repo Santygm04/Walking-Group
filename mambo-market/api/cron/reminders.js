@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { safeEqual } from "../_security.js"
-import { deleteRequest, listRequests, storageAvailable, updateRequest } from "../_storage.js"
+import { deleteRequest, listRequests, pruneAnalyticsEvents, storageAvailable, updateRequest } from "../_storage.js"
 import { buildMeetingLinks, buildReminderEmail, createTransport, getContactEmail, getFromAddress, meetingTimestampART } from "../_utils.js"
 
 const WINDOW_MS = 36 * 60 * 60 * 1000
@@ -48,6 +48,13 @@ export default async function handler(req, res) {
       }
     }
 
+    let analyticsPruned = 0
+    try {
+      analyticsPruned = await pruneAnalyticsEvents(90)
+    } catch (error) {
+      console.error("analytics-prune-error", error?.message)
+    }
+
     const requests = allRequests
       .filter((request) => request.status === "confirmed" && !request.reminderSentAt)
       .map((request) => ({ request, at: meetingTimestampART(request.date, request.time) }))
@@ -55,7 +62,7 @@ export default async function handler(req, res) {
       .slice(0, MAX_PER_RUN)
 
     if (!requests.length) {
-      return res.status(200).json({ ok: true, sent: 0, failed: 0, checked: 0, retentionDeleted })
+      return res.status(200).json({ ok: true, sent: 0, failed: 0, checked: 0, retentionDeleted, analyticsPruned })
     }
 
     const transport = createTransport()
@@ -98,7 +105,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ ok: true, sent, failed, checked: requests.length, retentionDeleted })
+    return res.status(200).json({ ok: true, sent, failed, checked: requests.length, retentionDeleted, analyticsPruned })
   } catch (error) {
     console.error("reminders-cron-error", error?.message)
     return res.status(500).json({ error: "CRON_FAILED", message: "No pudimos procesar los recordatorios." })
