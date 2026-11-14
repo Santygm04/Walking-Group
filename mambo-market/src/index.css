@@ -419,12 +419,12 @@ p {
   transform: translate3d(0, 18px, 0) scale(0.98);
 }
 
-.js [data-reveal].is-visible {
+.js [data-reveal][data-revealed="true"] {
   opacity: 1;
   transform: none;
 }
 
-.js [data-reveal]:not(.is-visible) {
+.js [data-reveal]:not([data-revealed="true"]) {
   will-change: opacity, transform;
 }
 

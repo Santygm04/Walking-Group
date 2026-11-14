@@ -21,7 +21,7 @@ export function useRevealOnScroll(reduced) {
     const elements = Array.from(document.querySelectorAll("[data-reveal]"))
 
     if (reduced || !("IntersectionObserver" in window)) {
-      elements.forEach((element) => element.classList.add("is-visible"))
+      elements.forEach((element) => element.setAttribute("data-revealed", "true"))
       return undefined
     }
 
@@ -29,7 +29,7 @@ export function useRevealOnScroll(reduced) {
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return
-          entry.target.classList.add("is-visible")
+          entry.target.setAttribute("data-revealed", "true")
           observer.unobserve(entry.target)
         })
       },

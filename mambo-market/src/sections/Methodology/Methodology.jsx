@@ -1,35 +1,12 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import Icon from "../../components/Icon"
 import { METHODS } from "../../data/siteData"
-import { usePrefersReducedMotion } from "../../hooks/useUI"
 import "./Methodology.css"
 
 const PHASES = ["Inmersión", "Diseño", "Campo", "Insights"]
 
 export default function Methodology() {
   const [openIndex, setOpenIndex] = useState(0)
-  const reduced = usePrefersReducedMotion()
-  const methodRefs = useRef([])
-
-  const handleToggle = (index) => {
-    const nextIndex = openIndex === index ? -1 : index
-    setOpenIndex(nextIndex)
-
-    window.setTimeout(() => {
-      const target = methodRefs.current[index]
-      if (!target) return
-      const rect = target.getBoundingClientRect()
-      const headerOffset = 100
-
-      if (rect.top < headerOffset || rect.top > window.innerHeight * 0.72) {
-        target.scrollIntoView({
-          behavior: reduced ? "auto" : "smooth",
-          block: "nearest",
-        })
-      }
-    }, 500)
-  }
-
   return (
     <section id="metodologia" className="section methodology">
       <div className="container">
@@ -87,7 +64,7 @@ export default function Methodology() {
                       id={`method-trigger-${index}`}
                       aria-expanded={isOpen}
                       aria-controls={`method-panel-${index}`}
-                      onClick={() => handleToggle(index)}
+                      onClick={() => setOpenIndex(isOpen ? -1 : index)}
                     >
                       <span className="method__index">{method.index}</span>
                       <span className="method__title">{method.title}</span>
