@@ -1251,6 +1251,10 @@ export default function AdminPage() {
             <Icon name="layers" size={17} />
             Solicitudes
           </span>
+          <button type="button" className="admin-nav__item" onClick={() => setAvailabilityOpen(true)}>
+            <Icon name="calendar" size={17} />
+            Disponibilidad
+          </button>
           <a className="admin-nav__item" href="/">
             <Icon name="globe" size={17} />
             Ver sitio
@@ -1412,12 +1416,12 @@ export default function AdminPage() {
           </article>
         </section>
 
-        <section className="admin-analytics" aria-label="Anal?tica web">
+        <section className="admin-analytics" aria-label="Analítica web">
           <div className="admin-analytics__head">
             <div>
               <p className="admin-eyebrow">Comportamiento</p>
-              <h2>Anal?tica web</h2>
-              <p>Visitas y clics an?nimos del sitio p?blico.</p>
+              <h2>Analítica web</h2>
+              <p>Visitas y clics anónimos del sitio público.</p>
             </div>
             <button
               type="button"
@@ -1426,7 +1430,7 @@ export default function AdminPage() {
               disabled={analyticsState.loading}
             >
               <Icon name="refresh" size={16} />
-              {analyticsState.loading ? "Actualizando?" : "Actualizar anal?tica"}
+              {analyticsState.loading ? "Actualizando…" : "Actualizar analítica"}
             </button>
           </div>
 
@@ -1439,7 +1443,7 @@ export default function AdminPage() {
           {analyticsState.loading && !analyticsState.data ? (
             <div className="admin-analytics__loading">
               <span className="admin-spinner" aria-hidden="true" />
-              <span>Cargando anal?tica?</span>
+              <span>Cargando analítica…</span>
             </div>
           ) : null}
 
@@ -1451,7 +1455,7 @@ export default function AdminPage() {
                   <strong>{analyticsState.data.totals.pageViews}</strong>
                 </article>
                 <article>
-                  <span>Visitantes ?nicos</span>
+                  <span>Visitantes únicos</span>
                   <strong>{analyticsState.data.totals.visitors}</strong>
                 </article>
                 <article>
@@ -1463,7 +1467,7 @@ export default function AdminPage() {
                   <strong>{analyticsState.data.totals.clicks}</strong>
                 </article>
                 <article>
-                  <span>Activos ?ltimos 30 min</span>
+                  <span>Activos últimos 30 min</span>
                   <strong>{analyticsState.data.totals.activeVisitors}</strong>
                 </article>
               </div>
@@ -1471,7 +1475,7 @@ export default function AdminPage() {
               <div className="analytics-grid">
                 <article className="analytics-card analytics-card--wide">
                   <div className="analytics-card__head">
-                    <h3>Visitas de los ?ltimos 14 d?as</h3>
+                    <h3>Visitas de los últimos 14 días</h3>
                     <span>{analyticsState.data.totals.pageViews} en total</span>
                   </div>
                   <div className="analytics-chart">
@@ -1491,7 +1495,7 @@ export default function AdminPage() {
                 </article>
 
                 <article className="analytics-card">
-                  <h3>P?ginas m?s vistas</h3>
+                  <h3>Páginas más vistas</h3>
                   {analyticsState.data.topPages.length ? (
                     <ul className="analytics-list">
                       {analyticsState.data.topPages.map((item) => (
@@ -1507,7 +1511,7 @@ export default function AdminPage() {
                 </article>
 
                 <article className="analytics-card">
-                  <h3>Clics m?s frecuentes</h3>
+                  <h3>Clics más frecuentes</h3>
                   {analyticsState.data.topClicks.length ? (
                     <ul className="analytics-list">
                       {analyticsState.data.topClicks.map((item) => (
@@ -1534,7 +1538,7 @@ export default function AdminPage() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="analytics-empty">Sin datos de ubicaci?n.</p>
+                    <p className="analytics-empty">Sin datos de ubicación.</p>
                   )}
                 </article>
               </div>
@@ -1547,8 +1551,8 @@ export default function AdminPage() {
                       <tr>
                         <th>Hora</th>
                         <th>Evento</th>
-                        <th>P?gina / elemento</th>
-                        <th>Ubicaci?n</th>
+                        <th>Página / elemento</th>
+                        <th>Ubicación</th>
                         <th>Visitante</th>
                       </tr>
                     </thead>
@@ -1569,12 +1573,12 @@ export default function AdminPage() {
                     </tbody>
                   </table>
                 </div>
-                {!analyticsState.data.recent.length ? <p className="analytics-empty">Todav?a no hay actividad.</p> : null}
+                {!analyticsState.data.recent.length ? <p className="analytics-empty">Todavía no hay actividad.</p> : null}
               </div>
 
               <p className="admin-analytics__note">
-                Anal?tica an?nima: no se guardan direcciones IP ni datos ingresados en formularios. Los visitantes se identifican
-                con un c?digo aleatorio del navegador.
+                Analítica anónima: no se guardan direcciones IP ni datos ingresados en formularios. Los visitantes se identifican
+                con un código aleatorio del navegador.
               </p>
             </>
           ) : null}

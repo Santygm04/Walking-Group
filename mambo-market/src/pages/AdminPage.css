@@ -2269,3 +2269,12 @@
     grid-template-columns: repeat(14, minmax(22px, 1fr));
   }
 }
+
+button.admin-nav__item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
