@@ -230,6 +230,17 @@
   width: 68px;
 }
 
+.availability__settings-wide {
+  grid-column: 1 / -1;
+}
+
+.availability__settings-wide small {
+  font-size: 0.5625rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--muted-2);
+}
+
 .availability__month-head {
   display: flex;
   align-items: center;
@@ -281,7 +292,8 @@
   color: var(--muted-2);
 }
 
-.availability__days > span {
+.availability__days > span,
+.availability__days > button {
   display: grid;
   place-items: center;
   position: relative;
@@ -293,21 +305,52 @@
   color: var(--muted-2);
 }
 
-.availability__days > span.is-open {
+.availability__days > button {
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease-out),
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+
+.availability__days > button:disabled {
+  cursor: not-allowed;
+}
+
+.availability__days > button.is-open {
   border-color: var(--line);
   background: var(--surface);
   color: var(--navy);
 }
 
-.availability__days > span.is-blocked {
+.availability__days > button.is-open:hover {
+  border-color: var(--orange);
+}
+
+.availability__days > button.is-extra {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: var(--navy);
+}
+
+.availability__days > button.is-blocked {
   border-color: rgba(170, 47, 34, 0.3);
   background: #fbeceb;
   color: #aa2f22;
   text-decoration: line-through;
 }
 
-.availability__days > span.is-past {
+.availability__days > button.is-past {
   opacity: 0.38;
+}
+
+.availability__calendar-hint {
+  margin-top: 9px;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  color: var(--muted-2);
 }
 
 .availability__days b {
@@ -348,6 +391,11 @@
   border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--surface);
+}
+
+.availability__legend i.is-extra {
+  border-color: var(--orange);
+  background: var(--orange-soft);
 }
 
 .availability__legend i.is-blocked {
@@ -602,4 +650,9 @@
     grid-column: 1 / -1;
     grid-row: 2;
   }
+}
+
+.availability__settings-wide .availability-day__hours input {
+  width: 90px;
+  flex: none;
 }

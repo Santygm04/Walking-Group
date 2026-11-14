@@ -51,6 +51,9 @@ const FALLBACK = {
     6: { enabled: false, start: "09:00", end: "18:00" },
   },
   blockedDates: [],
+  extraDates: [],
+  extraStart: "09:00",
+  extraEnd: "18:00",
 }
 
 function ymd(year, month, day) {
@@ -78,6 +81,9 @@ function cloneSettings(value) {
     minNoticeHours: Number.isFinite(source.minNoticeHours) ? source.minNoticeHours : 2,
     weekly,
     blockedDates: Array.isArray(source.blockedDates) ? [...source.blockedDates] : [],
+    extraDates: Array.isArray(source.extraDates) ? [...source.extraDates] : [],
+    extraStart: source.extraStart || "09:00",
+    extraEnd: source.extraEnd || "18:00",
   }
 }
 
@@ -176,21 +182,25 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const blockedSet = new Set(settings.blockedDates)
+  const extraSet = new Set(settings.extraDates)
   const cells = [
     ...Array.from({ length: firstWeekday }, () => null),
     ...Array.from({ length: daysInMonth }, (_, index) => {
       const date = ymd(year, month, index + 1)
       const weekday = new Date(Date.UTC(year, month, index + 1, 12)).getUTCDay()
-      const day = settings.weekly[weekday]
+      const weeklyOpen = Boolean(settings.weekly[weekday]?.enabled)
       const blocked = blockedSet.has(date)
+      const extra = extraSet.has(date)
       const past = date < today
       return {
         day: index + 1,
         date,
-        open: Boolean(day?.enabled) && !blocked && !past,
+        open: (weeklyOpen || extra) && !blocked && !past,
+        weeklyOpen,
+        extra: extra && !blocked,
         blocked,
         past,
-        closed: !day?.enabled,
+        closed: !weeklyOpen && !extra,
         booked: bookedCount.get(date) || 0,
       }
     }),
@@ -206,6 +216,30 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
     }))
   }
 
+  const toggleDate = (cell) => {
+    if (!cell || cell.past) return
+    setSettings((previous) => {
+      const blockedDates = previous.blockedDates.filter((date) => date !== cell.date)
+      const extraDates = previous.extraDates.filter((date) => date !== cell.date)
+
+      if (cell.blocked) {
+        if (cell.weeklyOpen) return { ...previous, blockedDates, extraDates }
+        return { ...previous, blockedDates, extraDates: [...extraDates, cell.date].sort() }
+      }
+
+      if (cell.weeklyOpen) {
+        return { ...previous, blockedDates: [...blockedDates, cell.date].sort(), extraDates }
+      }
+
+      if (cell.extra) {
+        return { ...previous, blockedDates, extraDates }
+      }
+
+      return { ...previous, blockedDates, extraDates: [...extraDates, cell.date].sort() }
+    })
+    setStatus({ type: "idle", message: "" })
+  }
+
   const addBlockedDate = () => {
     if (!blockDate) {
       setStatus({ type: "error", message: "Elegí una fecha para bloquear." })
@@ -218,6 +252,7 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
     setSettings((previous) => ({
       ...previous,
       blockedDates: [...previous.blockedDates, blockDate].sort(),
+      extraDates: previous.extraDates.filter((date) => date !== blockDate),
     }))
     setBlockDate("")
     setStatus({ type: "idle", message: "" })
@@ -240,6 +275,11 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
         setStatus({ type: "error", message: `El horario de ${day.label.toLowerCase()} no es válido.` })
         return
       }
+    }
+
+    if (toMinutes(settings.extraEnd) <= toMinutes(settings.extraStart)) {
+      setStatus({ type: "error", message: "El horario para días puntuales no es válido." })
+      return
     }
 
     setSaving(true)
@@ -379,6 +419,29 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
                   horas
                 </span>
               </label>
+              <label className="availability__settings-wide">
+                Horario para días puntuales
+                <span className="availability-day__hours">
+                  <input
+                    type="time"
+                    value={settings.extraStart}
+                    onChange={(event) =>
+                      setSettings((previous) => ({ ...previous, extraStart: event.target.value }))
+                    }
+                    aria-label="Hora de inicio para días puntuales"
+                  />
+                  <span>a</span>
+                  <input
+                    type="time"
+                    value={settings.extraEnd}
+                    onChange={(event) =>
+                      setSettings((previous) => ({ ...previous, extraEnd: event.target.value }))
+                    }
+                    aria-label="Hora de fin para días puntuales"
+                  />
+                </span>
+                <small>Se usan al abrir un día cerrado desde el calendario.</small>
+              </label>
             </div>
           </section>
 
@@ -418,29 +481,40 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
             <div className="availability__days">
               {cells.map((cell, index) =>
                 cell ? (
-                  <span
+                  <button
                     key={cell.date}
-                    className={`availability__day ${cell.closed ? "is-closed" : ""} ${cell.blocked ? "is-blocked" : ""} ${cell.past ? "is-past" : ""} ${cell.open ? "is-open" : ""}`}
-                    title={`${formatDate(cell.date)}${cell.blocked ? " · bloqueado" : cell.closed ? " · cerrado" : cell.booked ? ` · ${cell.booked} turno(s)` : " · disponible"}`}
+                    type="button"
+                    className={`availability__day ${cell.closed ? "is-closed" : ""} ${cell.blocked ? "is-blocked" : ""} ${cell.past ? "is-past" : ""} ${cell.open ? "is-open" : ""} ${cell.extra ? "is-extra" : ""}`}
+                    onClick={() => toggleDate(cell)}
+                    disabled={cell.past}
+                    aria-pressed={cell.open}
+                    title={`${formatDate(cell.date)}${cell.blocked ? " · cerrado" : cell.open ? (cell.booked ? ` · ${cell.booked} turno(s)` : " · disponible") : " · cerrado"} · clic para ${cell.open ? "cerrar" : "abrir"}`}
                   >
                     {cell.day}
                     {cell.booked ? <b>{cell.booked}</b> : null}
-                  </span>
+                  </button>
                 ) : (
                   <span key={`empty-${index}`} />
                 ),
               )}
             </div>
 
+            <p className="availability__calendar-hint">
+              Hacé clic en un día para abrirlo o cerrarlo. Los días cerrados usan el horario para días puntuales.
+            </p>
+
             <div className="availability__legend">
               <span>
                 <i className="is-open" /> Disponible
               </span>
               <span>
-                <i className="is-blocked" /> Bloqueado
+                <i className="is-extra" /> Día puntual
               </span>
               <span>
-                <i className="is-closed" /> Cerrado
+                <i className="is-blocked" /> Cerrado
+              </span>
+              <span>
+                <i className="is-closed" /> Sin horario
               </span>
             </div>
 

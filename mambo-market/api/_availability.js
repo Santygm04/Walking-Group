@@ -20,6 +20,9 @@ export const DEFAULT_AVAILABILITY = {
   minNoticeHours: 2,
   weekly: DEFAULT_WEEKLY,
   blockedDates: [],
+  extraDates: [],
+  extraStart: "09:00",
+  extraEnd: "18:00",
 }
 
 function isTime(value) {
@@ -64,8 +67,18 @@ export function normalizeAvailability(raw) {
         ),
       ).slice(0, 400)
     : []
+  const extraDates = Array.isArray(source.extraDates)
+    ? Array.from(
+        new Set(
+          source.extraDates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(String(date))),
+        ),
+      ).slice(0, 400)
+    : []
+  const extraStart = isTime(source.extraStart) ? source.extraStart : "09:00"
+  const rawExtraEnd = isTime(source.extraEnd) ? source.extraEnd : "18:00"
+  const extraEnd = toMinutes(rawExtraEnd) > toMinutes(extraStart) ? rawExtraEnd : "18:00"
 
-  return { slotMinutes, minNoticeHours, weekly, blockedDates }
+  return { slotMinutes, minNoticeHours, weekly, blockedDates, extraDates, extraStart, extraEnd }
 }
 
 export async function getAvailabilitySettings() {
@@ -96,9 +109,17 @@ export async function saveAvailabilitySettings(raw) {
 
 export function generateSlots(settings, date) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return []
+  if (settings.blockedDates?.includes(date)) return []
+
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
-  const day = settings.weekly[weekday]
-  if (!day?.enabled) return []
+  const weeklyDay = settings.weekly[weekday]
+  const isExtra = settings.extraDates?.includes(date)
+  const day = weeklyDay?.enabled
+    ? weeklyDay
+    : isExtra
+      ? { start: settings.extraStart || "09:00", end: settings.extraEnd || "18:00" }
+      : null
+  if (!day) return []
 
   const start = toMinutes(day.start)
   const end = toMinutes(day.end)
