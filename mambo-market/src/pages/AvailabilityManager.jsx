@@ -98,6 +98,7 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
   const [loadState, setLoadState] = useState({ loading: false, error: "" })
   const [settings, setSettings] = useState(() => cloneSettings(FALLBACK))
   const [blockDate, setBlockDate] = useState("")
+  const [selectedDate, setSelectedDate] = useState("")
   const [monthOffset, setMonthOffset] = useState(0)
   const [status, setStatus] = useState({ type: "idle", message: "" })
   const [saving, setSaving] = useState(false)
@@ -206,6 +207,22 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
     }),
   ]
 
+  const selectedInfo = useMemo(() => {
+    if (!selectedDate) return null
+    const weekday = new Date(`${selectedDate}T12:00:00Z`).getUTCDay()
+    const weeklyDay = settings.weekly[weekday]
+    const weeklyOpen = Boolean(weeklyDay?.enabled)
+    const blocked = settings.blockedDates.includes(selectedDate)
+    const extra = settings.extraDates.includes(selectedDate)
+    return {
+      date: selectedDate,
+      open: (weeklyOpen || extra) && !blocked,
+      blocked,
+      start: weeklyOpen ? weeklyDay.start : settings.extraStart,
+      end: weeklyOpen ? weeklyDay.end : settings.extraEnd,
+    }
+  }, [selectedDate, settings])
+
   const updateDay = (dayKey, patch) => {
     setSettings((previous) => ({
       ...previous,
@@ -218,6 +235,7 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
 
   const toggleDate = (cell) => {
     if (!cell || cell.past) return
+    setSelectedDate(cell.date)
     setSettings((previous) => {
       const blockedDates = previous.blockedDates.filter((date) => date !== cell.date)
       const extraDates = previous.extraDates.filter((date) => date !== cell.date)
@@ -484,7 +502,7 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
                   <button
                     key={cell.date}
                     type="button"
-                    className={`availability__day ${cell.closed ? "is-closed" : ""} ${cell.blocked ? "is-blocked" : ""} ${cell.past ? "is-past" : ""} ${cell.open ? "is-open" : ""} ${cell.extra ? "is-extra" : ""}`}
+                    className={`availability__day ${cell.closed ? "is-closed" : ""} ${cell.blocked ? "is-blocked" : ""} ${cell.past ? "is-past" : ""} ${cell.open ? "is-open" : ""} ${cell.extra ? "is-extra" : ""} ${selectedDate === cell.date ? "is-selected" : ""}`}
                     onClick={() => toggleDate(cell)}
                     disabled={cell.past}
                     aria-pressed={cell.open}
@@ -502,6 +520,19 @@ export default function AvailabilityManager({ open, onClose, requests = [], onSa
             <p className="availability__calendar-hint">
               Hacé clic en un día para abrirlo o cerrarlo. Los días cerrados usan el horario para días puntuales.
             </p>
+
+            {selectedInfo ? (
+              <div className={`availability__selected ${selectedInfo.open ? "is-open" : "is-closed"}`} aria-live="polite">
+                <span className="availability__selected-dot" aria-hidden="true" />
+                <div>
+                  <span>Día seleccionado</span>
+                  <strong>{formatDate(selectedInfo.date)}</strong>
+                </div>
+                <span className="availability__selected-status">
+                  {selectedInfo.open ? `Abierto · ${selectedInfo.start} a ${selectedInfo.end}` : "Cerrado"}
+                </span>
+              </div>
+            ) : null}
 
             <div className="availability__legend">
               <span>

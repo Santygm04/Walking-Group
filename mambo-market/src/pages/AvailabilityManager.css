@@ -346,11 +346,71 @@
   opacity: 0.38;
 }
 
+.availability__days > button.is-selected {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px var(--orange);
+  z-index: 1;
+}
+
 .availability__calendar-hint {
   margin-top: 9px;
   font-size: 0.625rem;
   line-height: 1.5;
   color: var(--muted-2);
+}
+
+.availability__selected {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.availability__selected-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--muted-2);
+}
+
+.availability__selected.is-open .availability__selected-dot {
+  background: var(--orange);
+  box-shadow: 0 0 0 3px var(--orange-soft);
+}
+
+.availability__selected > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.availability__selected > div span {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.availability__selected > div strong {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--navy);
+}
+
+.availability__selected-status {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .availability__days b {
@@ -524,21 +584,38 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 12px 16px;
   flex: 0 0 auto;
-  padding: 16px 24px;
+  padding: 14px 24px;
   border-top: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--bg);
 }
 
 .availability__foot > div {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex: none;
+  margin-left: auto;
+}
+
+.availability__foot .admin-button {
+  min-height: 42px;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.availability__foot .admin-button:hover {
+  border-color: var(--navy);
+  background: var(--surface);
+  color: var(--navy);
 }
 
 .availability__hint {
+  flex: 1 1 280px;
   font-size: 0.625rem;
+  line-height: 1.5;
   color: var(--muted-2);
 }
 
@@ -572,10 +649,10 @@
   color: var(--navy);
 }
 
-.admin-button--accent:hover {
+.availability__foot .admin-button--accent:hover {
   border-color: var(--orange-deep);
-  background: var(--orange-deep);
-  color: var(--surface);
+  background: var(--orange-soft);
+  color: var(--navy);
 }
 
 @media (max-width: 860px) {
