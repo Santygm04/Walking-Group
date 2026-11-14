@@ -87,6 +87,8 @@
 }
 
 .method {
+  scroll-margin-top: calc(var(--header-h) + 24px);
+  scroll-margin-bottom: 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
